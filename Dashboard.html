@@ -1,0 +1,3587 @@
+<!DOCTYPE html>
+<html lang="vi">
+   <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>Hệ thống Quản lý Công tác - THACO AGRI KLH SNUOL</title>
+      <!-- Chart.js for charts -->
+      <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+      <!-- SheetJS for Excel export -->
+      <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+      <!-- jsPDF for PDF generation -->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+      <style>
+         * {
+         margin: 0;
+         padding: 0;
+         box-sizing: border-box;
+         }
+         :root {
+         --primary-color: #00682b;
+         --primary-dark: #004d1f;
+         --secondary-color: #fffbd5;
+         --text-dark: #333;
+         --text-light: #666;
+         --border-color: #ddd;
+         --success-color: #00682b;
+         --warning-color: #ff9800;
+         --danger-color: #f44336;
+         --info-color: #2196f3;
+         }
+         body {
+         font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+         background: linear-gradient(135deg, #fffbd5 0%, #00682b 100%);
+         background-attachment: fixed;
+         min-height: 100vh;
+         padding: 20px;
+         /* animation: gradientShift 15s ease infinite; - REMOVED */
+         }
+         .container {
+         max-width: 1400px;
+         margin: 0 auto;
+         animation: fadeIn 0.5s ease-in;
+         }
+         @keyframes fadeIn {
+         from {
+         opacity: 0;
+         transform: translateY(20px);
+         }
+         to {
+         opacity: 1;
+         transform: translateY(0);
+         }
+         }
+         /* Header */
+         .header {
+         background: linear-gradient(
+         135deg,
+         var(--primary-color) 0%,
+         var(--primary-dark) 100%
+         );
+         color: white;
+         padding: 30px;
+         border-radius: 20px 20px 0 0;
+         display: flex;
+         justify-content: space-between;
+         align-items: center;
+         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+         backdrop-filter: blur(10px);
+         position: relative;
+         overflow: hidden;
+         }
+         .header::before {
+         content: "";
+         position: absolute;
+         top: -50%;
+         right: -50%;
+         width: 200%;
+         height: 200%;
+         background: radial-gradient(
+         circle,
+         rgba(255, 255, 255, 0.1) 0%,
+         transparent 70%
+         );
+         animation: headerGlow 8s ease-in-out infinite;
+         }
+         @keyframes headerGlow {
+         0%,
+         100% {
+         transform: translate(0, 0);
+         }
+         50% {
+         transform: translate(-20px, -20px);
+         }
+         }
+         .header h1 {
+         font-size: 28px;
+         font-weight: 600;
+         display: flex;
+         align-items: center;
+         gap: 15px;
+         }
+         .logo {
+         width: 60px;
+         height: 60px;
+         background: white;
+         border-radius: 12px;
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         font-size: 24px;
+         overflow: hidden;
+         position: relative;
+         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+         cursor: pointer;
+         transition: all 0.3s ease;
+         animation: logoFloat 3s ease-in-out infinite;
+         }
+         @keyframes logoFloat {
+         0%,
+         100% {
+         transform: translateY(0px);
+         }
+         50% {
+         transform: translateY(-5px);
+         }
+         }
+         .logo:hover {
+         transform: scale(1.1) rotate(5deg);
+         box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+         }
+         .logo img {
+         width: 100%;
+         height: 100%;
+         object-fit: contain;
+         padding: 5px;
+         }
+         .logo-upload-btn {
+         position: absolute;
+         bottom: 0;
+         left: 0;
+         right: 0;
+         background: rgba(0, 104, 43, 0.9);
+         color: white;
+         font-size: 10px;
+         padding: 3px;
+         text-align: center;
+         opacity: 0;
+         transition: opacity 0.3s;
+         cursor: pointer;
+         }
+         .logo:hover .logo-upload-btn {
+         opacity: 1;
+         }
+         #logoInput {
+         display: none;
+         }
+         .user-info {
+         display: flex;
+         align-items: center;
+         gap: 15px;
+         }
+         .user-avatar {
+         width: 40px;
+         height: 40px;
+         background: white;
+         color: var(--primary-color);
+         border-radius: 50%;
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         font-weight: bold;
+         }
+         /* Stats Cards */
+         .stats-container {
+         display: grid;
+         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+         gap: 20px;
+         margin: 20px 0;
+         }
+         .stat-card {
+         background: white;
+         padding: 25px;
+         border-radius: 15px;
+         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+         position: relative;
+         overflow: hidden;
+         }
+         .stat-card::before {
+         content: "";
+         position: absolute;
+         top: 0;
+         left: 0;
+         width: 100%;
+         height: 4px;
+         background: linear-gradient(
+         90deg,
+         var(--primary-color),
+         var(--info-color)
+         );
+         transform: scaleX(0);
+         transition: transform 0.3s ease;
+         }
+         .stat-card:hover {
+         transform: translateY(-8px) scale(1.02);
+         box-shadow: 0 12px 40px rgba(0, 168, 107, 0.2);
+         }
+         .stat-card:hover::before {
+         transform: scaleX(1);
+         }
+         .stat-card h3 {
+         color: var(--text-light);
+         font-size: 14px;
+         font-weight: 500;
+         margin-bottom: 10px;
+         }
+         .stat-card .number {
+         font-size: 32px;
+         font-weight: 700;
+         color: var(--primary-color);
+         animation: countUp 1s ease-out;
+         }
+         @keyframes countUp {
+         from {
+         opacity: 0;
+         transform: translateY(20px);
+         }
+         to {
+         opacity: 1;
+         transform: translateY(0);
+         }
+         }
+         .stat-card .icon {
+         opacity: 0.15;
+         float: right;
+         transition: all 0.3s ease;
+         margin-top: -10px;
+         }
+         .stat-card:hover .icon {
+         opacity: 0.3;
+         transform: scale(1.15) rotate(5deg);
+         }
+         .stat-card .icon svg {
+         display: block;
+         filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+         }
+         /* Charts Section */
+         .charts-container {
+         display: grid;
+         grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+         gap: 20px;
+         margin: 20px 0;
+         }
+         .chart-card {
+         background: white;
+         padding: 25px;
+         border-radius: 10px;
+         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+         }
+         .chart-card h3 {
+         color: var(--text-dark);
+         margin-bottom: 20px;
+         font-size: 18px;
+         }
+         /* Form Section */
+         .form-section {
+         background: white;
+         padding: 30px;
+         border-radius: 10px;
+         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+         margin: 20px 0;
+         }
+         .form-header {
+         display: flex;
+         justify-content: space-between;
+         align-items: center;
+         margin-bottom: 20px;
+         cursor: pointer;
+         user-select: none;
+         }
+         .form-header h2 {
+         color: var(--primary-color);
+         font-size: 22px;
+         }
+         .toggle-icon {
+         font-size: 24px;
+         transition: transform 0.3s;
+         }
+         .toggle-icon.rotated {
+         transform: rotate(180deg);
+         }
+         .form-content {
+         max-height: 0;
+         overflow: hidden;
+         transition: max-height 0.3s ease-out;
+         }
+         .form-content.expanded {
+         max-height: 1000px;
+         }
+         .form-grid {
+         display: grid;
+         grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+         gap: 20px;
+         margin: 20px 0;
+         }
+         .form-group {
+         display: flex;
+         flex-direction: column;
+         }
+         .form-group label {
+         color: var(--text-dark);
+         font-weight: 500;
+         margin-bottom: 8px;
+         font-size: 14px;
+         }
+         .form-group input,
+         .form-group select,
+         .form-group textarea {
+         padding: 12px;
+         border: 2px solid var(--border-color);
+         border-radius: 8px;
+         font-size: 14px;
+         transition: border-color 0.3s;
+         }
+         .form-group input:focus,
+         .form-group select:focus,
+         .form-group textarea:focus {
+         outline: none;
+         border-color: var(--primary-color);
+         }
+         .form-group textarea {
+         resize: vertical;
+         min-height: 80px;
+         }
+         .checkbox-group {
+         display: flex;
+         flex-wrap: wrap;
+         gap: 15px;
+         margin-top: 10px;
+         }
+         .checkbox-item {
+         display: flex;
+         align-items: center;
+         gap: 8px;
+         }
+         .checkbox-item input[type="checkbox"] {
+         width: 18px;
+         height: 18px;
+         cursor: pointer;
+         }
+         .form-actions {
+         display: flex;
+         gap: 15px;
+         margin-top: 25px;
+         justify-content: flex-end;
+         }
+         /* Buttons */
+         .btn {
+         padding: 12px 30px;
+         border: none;
+         border-radius: 8px;
+         font-size: 14px;
+         font-weight: 600;
+         cursor: pointer;
+         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+         display: inline-flex;
+         align-items: center;
+         gap: 8px;
+         position: relative;
+         overflow: hidden;
+         }
+         .btn::before {
+         content: "";
+         position: absolute;
+         top: 50%;
+         left: 50%;
+         width: 0;
+         height: 0;
+         border-radius: 50%;
+         background: rgba(255, 255, 255, 0.3);
+         transform: translate(-50%, -50%);
+         transition: width 0.6s, height 0.6s;
+         }
+         .btn:hover::before {
+         width: 300px;
+         height: 300px;
+         }
+         .btn-primary {
+         background: linear-gradient(
+         135deg,
+         var(--primary-color) 0%,
+         var(--primary-dark) 100%
+         );
+         color: white;
+         box-shadow: 0 4px 15px rgba(0, 168, 107, 0.2);
+         }
+         .btn-primary:hover {
+         transform: translateY(-3px);
+         box-shadow: 0 8px 25px rgba(0, 168, 107, 0.4);
+         }
+         .btn-primary:active {
+         transform: translateY(-1px);
+         }
+         .btn-secondary {
+         background: #6c757d;
+         color: white;
+         }
+         .btn-secondary:hover {
+         background: #545b62;
+         }
+         .btn-success {
+         background: var(--success-color);
+         color: white;
+         }
+         .btn-danger {
+         background: var(--danger-color);
+         color: white;
+         }
+         .btn-info {
+         background: var(--info-color);
+         color: white;
+         }
+         .btn-warning {
+         background: var(--warning-color);
+         color: white;
+         }
+         .btn-sm {
+         padding: 6px 12px;
+         font-size: 12px;
+         }
+         /* Table Section */
+         .table-section {
+         background: white;
+         padding: 30px;
+         border-radius: 10px;
+         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+         margin: 20px 0;
+         }
+         .table-header {
+         display: flex;
+         justify-content: space-between;
+         align-items: center;
+         margin-bottom: 20px;
+         flex-wrap: wrap;
+         gap: 15px;
+         }
+         .table-header h2 {
+         color: var(--primary-color);
+         font-size: 22px;
+         }
+         .table-actions {
+         display: flex;
+         gap: 10px;
+         flex-wrap: wrap;
+         }
+         /* Filters */
+         .filters {
+         display: flex;
+         gap: 15px;
+         flex-wrap: wrap;
+         margin-bottom: 20px;
+         padding: 20px;
+         background: var(--secondary-color);
+         border-radius: 8px;
+         }
+         .filter-item {
+         flex: 1;
+         min-width: 200px;
+         }
+         .filter-item input,
+         .filter-item select {
+         width: 100%;
+         padding: 10px;
+         border: 2px solid var(--border-color);
+         border-radius: 6px;
+         font-size: 14px;
+         }
+         /* Table */
+         .table-wrapper {
+         overflow-x: auto;
+         }
+         table {
+         width: 100%;
+         border-collapse: collapse;
+         background: white;
+         }
+         thead {
+         background: var(--primary-color);
+         color: white;
+         position: sticky;
+         top: 0;
+         z-index: 10;
+         }
+         th {
+         padding: 15px;
+         text-align: left;
+         font-weight: 600;
+         font-size: 14px;
+         white-space: nowrap;
+         }
+         td {
+         padding: 12px 15px;
+         border-bottom: 1px solid var(--border-color);
+         font-size: 14px;
+         }
+         tbody tr {
+         transition: all 0.3s ease;
+         animation: slideIn 0.3s ease-out backwards;
+         }
+         tbody tr:nth-child(1) {
+         animation-delay: 0.05s;
+         }
+         tbody tr:nth-child(2) {
+         animation-delay: 0.1s;
+         }
+         tbody tr:nth-child(3) {
+         animation-delay: 0.15s;
+         }
+         tbody tr:nth-child(4) {
+         animation-delay: 0.2s;
+         }
+         tbody tr:nth-child(5) {
+         animation-delay: 0.25s;
+         }
+         @keyframes slideIn {
+         from {
+         opacity: 0;
+         transform: translateX(-20px);
+         }
+         to {
+         opacity: 1;
+         transform: translateX(0);
+         }
+         }
+         tbody tr:hover {
+         background: linear-gradient(90deg, #f8f9fa 0%, #e9ecef 100%);
+         transform: scale(1.01);
+         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+         }
+         .status-badge {
+         padding: 5px 12px;
+         border-radius: 20px;
+         font-size: 12px;
+         font-weight: 600;
+         display: inline-block;
+         }
+         .status-pending {
+         background: #fff3cd;
+         color: #856404;
+         }
+         .status-approved {
+         background: #d4edda;
+         color: #155724;
+         }
+         .status-rejected {
+         background: #f8d7da;
+         color: #721c24;
+         }
+         .action-buttons {
+         display: flex;
+         gap: 5px;
+         }
+         .action-btn {
+         width: 32px;
+         height: 32px;
+         border: none;
+         border-radius: 6px;
+         cursor: pointer;
+         font-size: 16px;
+         transition: all 0.3s;
+         }
+         .action-btn:hover {
+         transform: scale(1.1);
+         }
+         /* Pagination */
+         .pagination {
+         display: flex;
+         justify-content: space-between;
+         align-items: center;
+         margin-top: 20px;
+         flex-wrap: wrap;
+         gap: 15px;
+         }
+         .pagination-info {
+         color: var(--text-light);
+         font-size: 14px;
+         }
+         .pagination-controls {
+         display: flex;
+         gap: 10px;
+         align-items: center;
+         }
+         .pagination-controls button {
+         padding: 8px 15px;
+         border: 2px solid var(--primary-color);
+         background: white;
+         color: var(--primary-color);
+         border-radius: 6px;
+         cursor: pointer;
+         font-weight: 600;
+         transition: all 0.3s;
+         }
+         .pagination-controls button:hover:not(:disabled) {
+         background: var(--primary-color);
+         color: white;
+         }
+         .pagination-controls button:disabled {
+         opacity: 0.5;
+         cursor: not-allowed;
+         }
+         .pagination-controls select {
+         padding: 8px;
+         border: 2px solid var(--border-color);
+         border-radius: 6px;
+         }
+         /* Modal */
+         .modal {
+         display: none;
+         position: fixed;
+         top: 0;
+         left: 0;
+         width: 100%;
+         height: 100%;
+         background: rgba(0, 0, 0, 0.5);
+         z-index: 1000;
+         overflow-y: auto;
+         }
+         .modal.active {
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         padding: 20px;
+         }
+         .modal-content {
+         background: white;
+         border-radius: 15px;
+         max-width: 600px;
+         width: 100%;
+         max-height: 90vh;
+         overflow-y: auto;
+         box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+         animation: slideIn 0.3s;
+         }
+         @keyframes slideIn {
+         from {
+         transform: translateY(-50px);
+         opacity: 0;
+         }
+         to {
+         transform: translateY(0);
+         opacity: 1;
+         }
+         }
+         .modal-header {
+         padding: 25px;
+         border-bottom: 2px solid var(--border-color);
+         display: flex;
+         justify-content: space-between;
+         align-items: center;
+         }
+         .modal-header h3 {
+         color: var(--primary-color);
+         font-size: 20px;
+         }
+         .close-btn {
+         background: none;
+         border: none;
+         font-size: 28px;
+         cursor: pointer;
+         color: var(--text-light);
+         line-height: 1;
+         }
+         .close-btn:hover {
+         color: var(--danger-color);
+         }
+         .modal-body {
+         padding: 25px;
+         }
+         .modal-footer {
+         padding: 20px 25px;
+         border-top: 2px solid var(--border-color);
+         display: flex;
+         justify-content: flex-end;
+         gap: 15px;
+         }
+         /* Loading Spinner */
+         .loading {
+         display: none;
+         position: fixed;
+         top: 0;
+         left: 0;
+         width: 100%;
+         height: 100%;
+         background: rgba(0, 0, 0, 0.7);
+         backdrop-filter: blur(5px);
+         z-index: 9999;
+         align-items: center;
+         justify-content: center;
+         flex-direction: column;
+         }
+         .loading.active {
+         display: flex;
+         }
+         .spinner {
+         width: 80px;
+         height: 80px;
+         position: relative;
+         }
+         .spinner::before,
+         .spinner::after {
+         content: "";
+         position: absolute;
+         border-radius: 50%;
+         border: 4px solid transparent;
+         border-top-color: var(--primary-color);
+         animation: spin 1s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+         }
+         .spinner::before {
+         width: 100%;
+         height: 100%;
+         }
+         .spinner::after {
+         width: 60px;
+         height: 60px;
+         top: 10px;
+         left: 10px;
+         border-top-color: white;
+         animation-duration: 0.7s;
+         animation-direction: reverse;
+         }
+         @keyframes spin {
+         to {
+         transform: rotate(360deg);
+         }
+         }
+         /* Toast Notification */
+         .toast {
+         position: fixed;
+         bottom: 30px;
+         right: 30px;
+         min-width: 300px;
+         padding: 20px;
+         border-radius: 10px;
+         color: white;
+         font-weight: 500;
+         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+         transform: translateX(400px);
+         transition: transform 0.3s;
+         z-index: 10000;
+         }
+         .toast.show {
+         transform: translateX(0);
+         }
+         .toast.success {
+         background: var(--success-color);
+         }
+         .toast.error {
+         background: var(--danger-color);
+         }
+         .toast.info {
+         background: var(--info-color);
+         }
+         /* Responsive */
+         @media (max-width: 768px) {
+         .header {
+         flex-direction: column;
+         gap: 15px;
+         text-align: center;
+         }
+         .stats-container {
+         grid-template-columns: 1fr;
+         }
+         .charts-container {
+         grid-template-columns: 1fr;
+         }
+         .form-grid {
+         grid-template-columns: 1fr;
+         }
+         .filters {
+         flex-direction: column;
+         }
+         .table-wrapper {
+         font-size: 12px;
+         }
+         th,
+         td {
+         padding: 8px;
+         }
+         }
+         /* Utility Classes */
+         .hidden {
+         display: none !important;
+         }
+         .text-center {
+         text-align: center;
+         }
+         .mb-20 {
+         margin-bottom: 20px;
+         }
+         .mt-20 {
+         margin-top: 20px;
+         }
+         /* ACTION BUTTONS - FIXED VERSION */
+         .action-buttons {
+         display: flex;
+         gap: 6px;
+         flex-wrap: wrap;
+         }
+         .action-btn {
+         width: 36px;
+         height: 36px;
+         border: none;
+         border-radius: 8px;
+         cursor: pointer;
+         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         position: relative;
+         overflow: hidden;
+         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+         }
+         .action-btn::before {
+         content: "";
+         position: absolute;
+         top: 50%;
+         left: 50%;
+         width: 0;
+         height: 0;
+         border-radius: 50%;
+         background: rgba(255, 255, 255, 0.3);
+         transform: translate(-50%, -50%);
+         transition: width 0.4s, height 0.4s;
+         }
+         .action-btn:hover::before {
+         width: 80px;
+         height: 80px;
+         }
+         .action-btn:hover {
+         transform: translateY(-3px) scale(1.1);
+         box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+         }
+         .action-btn:active {
+         transform: translateY(-1px) scale(1.05);
+         }
+         /* CRITICAL: Đảm bảo SVG hiển thị */
+         .action-btn svg {
+         width: 18px;
+         height: 18px;
+         position: relative;
+         z-index: 1;
+         display: block;
+         pointer-events: none; /* Quan trọng! */
+         }
+         /* Force SVG elements to show */
+         .action-btn svg path,
+         .action-btn svg circle,
+         .action-btn svg rect,
+         .action-btn svg line {
+         stroke: currentColor !important;
+         fill: none !important;
+         vector-effect: non-scaling-stroke;
+         }
+         /* Specific button styles */
+         .action-btn-view {
+         background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+         color: #ffffff;
+         }
+         .action-btn-view:hover {
+         box-shadow: 0 6px 16px rgba(33, 150, 243, 0.4);
+         }
+         .action-btn-approve {
+         background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
+         color: #ffffff;
+         }
+         .action-btn-approve:hover {
+         box-shadow: 0 6px 16px rgba(76, 175, 80, 0.4);
+         }
+         .action-btn-reject {
+         background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+         color: #ffffff;
+         }
+         .action-btn-reject:hover {
+         box-shadow: 0 6px 16px rgba(244, 67, 54, 0.4);
+         }
+         .action-btn-edit {
+         background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+         color: #ffffff;
+         }
+         .action-btn-edit:hover {
+         box-shadow: 0 6px 16px rgba(255, 152, 0, 0.4);
+         }
+         .action-btn-print {
+         background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%);
+         color: #ffffff;
+         }
+         .action-btn-print:hover {
+         box-shadow: 0 6px 16px rgba(156, 39, 176, 0.4);
+         }
+         .action-btn-delete {
+         background: linear-gradient(135deg, #607d8b 0%, #455a64 100%);
+         color: #ffffff;
+         }
+         .action-btn-delete:hover {
+         box-shadow: 0 6px 16px rgba(96, 125, 139, 0.4);
+         }
+         /* Responsive */
+         @media (max-width: 768px) {
+         .action-btn {
+         width: 32px;
+         height: 32px;
+         }
+         .action-btn svg {
+         width: 16px;
+         height: 16px;
+         }
+         }
+         .form-header h2::before,
+         .table-header h2::before {
+         content: "";
+         width: 4px;
+         height: 24px;
+         background: linear-gradient(
+         180deg,
+         var(--primary-color),
+         var(--primary-dark)
+         );
+         border-radius: 2px;
+         }
+         .status-badge {
+         padding: 6px 14px;
+         border-radius: 20px;
+         font-size: 13px;
+         font-weight: 600;
+         display: inline-flex;
+         align-items: center;
+         gap: 4px;
+         }
+         .status-badge svg {
+         flex-shrink: 0;
+         }
+         .status-pending {
+         background: #fff3cd;
+         color: #856404;
+         }
+         .status-approved {
+         background: #d4edda;
+         color: #155724;
+         }
+         .status-rejected {
+         background: #f8d7da;
+         color: #721c24;
+         }
+         .container {
+         max-width: 1400px;
+         margin: 0 auto;
+         animation: fadeIn 0.5s ease-in;
+         margin-bottom: 0; /* Remove bottom margin */
+         }
+         body {
+         font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+         background: linear-gradient(135deg, #fffbd5 0%, #00682b 100%);
+         background-attachment: fixed;
+         min-height: 100vh;
+         padding: 20px 20px 0 20px; /* Remove bottom padding */
+         }
+         /* Footer Contact */
+         .footer-contact {
+         background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+         color: white;
+         padding: 40px 30px;
+         border-radius: 0 0 20px 20px;
+         margin-top: 40px;
+         box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+         position: relative;
+         overflow: hidden;
+         }
+         .footer-contact::before {
+         content: "";
+         position: absolute;
+         top: -50%;
+         left: -50%;
+         width: 200%;
+         height: 200%;
+         background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+         animation: footerGlow 10s ease-in-out infinite;
+         }
+         @keyframes footerGlow {
+         0%, 100% {
+         transform: translate(0, 0) rotate(0deg);
+         }
+         50% {
+         transform: translate(20px, 20px) rotate(180deg);
+         }
+         }
+         .footer-content {
+         position: relative;
+         z-index: 1;
+         max-width: 1200px;
+         margin: 0 auto;
+         display: grid;
+         grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+         gap: 40px;
+         }
+         .footer-section h3 {
+         font-size: 18px;
+         font-weight: 600;
+         margin-bottom: 20px;
+         display: flex;
+         align-items: center;
+         gap: 10px;
+         color: var(--secondary-color);
+         }
+         .footer-section h3 svg {
+         width: 24px;
+         height: 24px;
+         flex-shrink: 0;
+         }
+         .footer-section p,
+         .footer-section a {
+         color: rgba(255, 255, 255, 0.9);
+         line-height: 1.8;
+         font-size: 14px;
+         text-decoration: none;
+         transition: all 0.3s;
+         }
+         .footer-section a:hover {
+         color: var(--secondary-color);
+         transform: translateX(5px);
+         }
+         .contact-item {
+         display: flex;
+         align-items: center;
+         gap: 12px;
+         margin-bottom: 15px;
+         transition: all 0.3s;
+         }
+         .contact-item:hover {
+         transform: translateX(5px);
+         }
+         .contact-item svg {
+         width: 20px;
+         height: 20px;
+         flex-shrink: 0;
+         opacity: 0.8;
+         }
+         .social-links {
+         display: flex;
+         gap: 15px;
+         margin-top: 15px;
+         }
+         .social-link {
+         width: 40px;
+         height: 40px;
+         background: rgba(255, 255, 255, 0.1);
+         border-radius: 50%;
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+         backdrop-filter: blur(10px);
+         }
+         .social-link:hover {
+         background: var(--secondary-color);
+         transform: translateY(-5px) scale(1.1);
+         box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+         }
+         .social-link:hover svg {
+         stroke: var(--primary-color);
+         }
+         .social-link svg {
+         width: 20px;
+         height: 20px;
+         stroke: white;
+         transition: stroke 0.3s;
+         }
+         .footer-divider {
+         height: 1px;
+         background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+         margin: 30px 0;
+         }
+         .footer-bottom {
+         text-align: center;
+         color: rgba(255, 255, 255, 0.8);
+         font-size: 13px;
+         position: relative;
+         z-index: 1;
+         }
+         .footer-bottom p {
+         margin: 5px 0;
+         }
+         .footer-bottom strong {
+         color: var(--secondary-color);
+         font-weight: 600;
+         }
+         .tech-stack {
+         display: flex;
+         justify-content: center;
+         gap: 15px;
+         margin-top: 15px;
+         flex-wrap: wrap;
+         }
+         .tech-badge {
+         background: rgba(255, 255, 255, 0.1);
+         padding: 6px 15px;
+         border-radius: 20px;
+         font-size: 12px;
+         backdrop-filter: blur(10px);
+         transition: all 0.3s;
+         }
+         .tech-badge:hover {
+         background: rgba(255, 255, 255, 0.2);
+         transform: scale(1.05);
+         }
+         /* Responsive */
+         @media (max-width: 768px) {
+         .footer-contact {
+         padding: 30px 20px;
+         }
+         .footer-content {
+         grid-template-columns: 1fr;
+         gap: 30px;
+         }
+         .social-links {
+         justify-content: center;
+         }
+         }
+      </style>
+   </head>
+   <body>
+      <!-- Loading Spinner -->
+      <div id="loading" class="loading">
+         <div class="spinner"></div>
+         <div
+            style="
+            color: white;
+            margin-top: 20px;
+            font-size: 16px;
+            font-weight: 500;
+            "
+            id="loadingText"
+            >
+            Đang tải dữ liệu...
+         </div>
+      </div>
+      <!-- Toast Notification -->
+      <div id="toast" class="toast"></div>
+      <div class="container">
+         <!-- Header -->
+         <div class="header">
+            <h1>
+               <div
+                  class="logo"
+                  onclick="document.getElementById('logoInput').click()"
+                  >
+                  <img id="logoImage" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABKYAAAQgCAYAAADc91QjAAAACXBIWXMAAC4jAAAuIwF4pT92AAAgAElEQVR4nOzd/XMkeV4f+MwJftf8B9L+fnmtjXvw7sysW3MEQfjh6B4/nE1g02obWKfti9H8BVMyXmwMeNWwUGCDtwUYfDZmu+/OOAiHY1qOY/iFZbqpP2Bav9zZZrFXXj9iM3mR6q96qqWqyiypHrLy83pFTEyolZWZlSmVqt7fz/fzzauqygB4IS+L3SzLXk//7bosAMCCPE//ZdVw9MRFBXhBMAWElJfFRfC0l/7bybJs208DALAiZ1mWPc2y7MnF/6vh6JsuPhCNYAoIIy+LOny6m/677c4DAB3zLAVVD6vh6KmbA0QgmAJ6LVVG7af/brnbAMCGOK0DqhRSPXfTgL4STAG9lKqjBqk6astdBgA22HEKqPSmAnpHMAX0ylggdc+dBQB65qR+nyOgAvpEMAX0QpqyVwdS77qjAEDPPc6y7MAUP6APBFPAxsvL4iCFUqbsAQCRHGZZdmQ1P2CTCaaAjZWXxV5qCrrtLgIAQZ2l6qmHfgCATSSYAjZO6iNVv/m67e4BAJx7lgIq/aeAjSKYAjZG6iNVT9t7310DAJjoODVI138K2AiCKWAj5GWxX/dQ0EcKAKDRWXrfpP8U0HmCKaDTUh+p+o3VLXcKAGAup6l6Sv8poLMEU0AnpT5SdSB1xx0CALiRkxRQ6T8FdI5gCuiUsT5SB6btAQAs1HFqkG56H9AZgimgM1IfqUGWZdvuCgDAUpyl3lMDlxfoAsEUsHapj1T95ui2uwEAsBKnqXrqkcsNrJNgClibNG2v7iN1z10AAFiLkxRQPXX5gXUQTAFrkZfFQB8pAIDO0H8KWAvBFLBSadreQ32kAAA65yyt3nfk1gCrIpgCViJN26urpN51xQEAOq2e3rdfDUfP3SZg2QRTwNLlZbGbZdkjVVIAABvjLIVTmqMDS/WaywssU14W+1mWfSSUAgDYKHUf0K/lZWFaH7BUKqaApcnL4qEV9wAANl49te+uxujAMgimgIVL/aTqUOqOqwsA0AvPsizbE04BiyaYAhYqhVJPsiy75coCAPSKcApYOD2mgIURSgEA9Fr9Hu9Jes8HsBCCKWCRHgmlAAB6TTgFLJRgCliI1Oj8tqsJANB7wilgYQRTwI3lZTGw+h4AQCh1OHXklgM3pfk5cCN5WdzNsuxrriIAQEjvVcORgAq4NsEUcG2pfPt5lmVbriIAQFifrYajp24/cB2m8gE38UgoBQAQ3iP9poDrEkwB15KXxYFm5wAAZFm2nWXZwIUArsNUPmBupvABADDB29Vw9MSFAeahYgq4jiOhFAAAl2iCDsxNMAXMJS+LvSzL7rlqAABccisvi30XBZiHYAqYl/4BAABMc6QROjAPwRTQWhoB0/AcAIBp6nYPB64O0Jbm50AraeTraVp1BQAAZvlMNRw9d4WAJiqmgLYOhFIAALSkETrQioopoFFeFjupWspKfAAAtPV2NRw9cbWAWVRMAW0cCaUAAJjTQxcMaCKYAmbKy2Ivy7I7rhIAAHPazstCI3RgJsEU0ER/AAAArmuQFtEBmEgwBUyVl8V+lmW3XCEAAK6pbgcxcPGAaTQ/ByZKI1vP9ZYCAGABPlMNR89dSOAyFVPANAdCKQAAFkQjdGAiFVPAFXlZ7GRZ9rErAwDAAr1TDUePXFBgnIopYBIjWgAALJpFdYArBFPAK/Ky2Muy7LarAgDAgm3nZaEROvAKwRRwmWopAACW5SAtsgNwTjAFvJSXRd3wfNsVAQBgSbZM6QPGaX4OnEsjV8+txLdWZ1mWPU0n8CToNQCAZdpL+971nmftPlsNR087fo7ACnybiwwkA2/QVuo0hVBP0v+fVsPRNwM9fwBYu9Rbczf9t6dyfKWOxoJCIDAVU0D9pqx+M/aRK7F0z1IPr0fVcPS8588VADZOXhY7KSy5m2XZHXdw6e5Xw5H+phCcYAqo34Q9sRLf0pymEUFhFABskNTmoA6o6h6ct9y7pajfJ+2qGofYBFMQXF4W9Ruur0W/DkvwuA6kquFIrygA2HCpurwOqO65lwt3WA1Hg549J2AOgikILi+L5/opLNRx3a9LdRQA9E+a6jcQUC3UWaqa8t4JghJMQWB5WdRvrN73M7AQJymQUiEFAD0noFq4x9VwdLdnzwloSTAFQaW+Cc+txHdjdW+Eg2o4erThzwMAmFNa1W+gV+dCvG2AD2J6zX2HsI6EUjdylnoi7AilACCmOkiphqM6nLqfBqu4viPXDmJSMQUBpdG9D9z7a9NHCgB4RapGP9Am4UbuV8PRww0+f+AaBFMQUF4WT5ScX4s+UgDATKn/VF39c8eVmltdkV5Xo39zw84buAFT+SCYvCz2hVJzO00jeHtCKQBglrqiOjXyfjvLsmcu1ly2UtUZEIiKKQgklZg/zbJs231v7bAe9TRyBwBcRxoU1NtzPp/RMgHiUDEFsRwIpVp7nN4UDYRSAMB1pZ5J9fS+By5ia/pMQSAqpiCI1O/gqdG6RnXJ/YEpewDAoqX3Yw+1VWjlbe/HIIZvc58hDCXks52lQMoIHQCwFGl62l5aIfmhSvaZLirNgJ5TMQUBpDc/H7jXU+kjBQCsXF4WdZuFgcHDqd6rhqOjjp4bsCCCKQggL4t6Ct8t9/qKkyzL9jXXBADWJS1OU4cv99yEK+qK9h2Dh9BvginoubQSzFfd51ecpkBK3wIAoBPysthNAZX+U696UA1HB106IWCxBFPQY2kE7rny8JfqUbeBknAAoKvysribAir9pz712Wo4etqVkwEW6zXXE3rtQCj10uNUCi6UAgA6qxqOHmVZVldPPXCXXvL+DXpMxRT0VFqO+GP397xKaj+9yQMA2BhW73vFO97PQT+pmIL+eujeZs/qEUdvYgCATZT6Ye6myu/oVE1BT6mYgh5Ko2sfBL+3x9VwtN+B8wAAuLG8LOoWDV8OfiUPq+Fo0IHzABZIxRT0U/RqqftCKQCgT1KfzHdSm4KoDtLiPkCPCKagZ9JoWuQ+BHUoFT2YAwB6KLUn2AscTm2Z0gf9Yyof9EgaQXoedCW++g3anqWEAYC+y8ui7jv1JPDqy2+n/ltAD6iYgn4ZCKUAAPotveeJXDmlzxT0iGAKeiKNnL0b9H4eCKUAgEiCh1O387LQTxR6QjAF/RF1vr2eUgBASCmcuhv06Q80Qod+EExBD+RlUb8huR3wXh4LpQCAyFKvpfsBL0G92M9BB84DuCHBFPRDxGqpk2o4UsINAISXBuqOA16Hg7wsdjpwHsANCKZgw+VlMUgjRpGcBS5bBwCYpK4eehbsymwFbmcBvZFXVeVuwoZK8+qfB1yJ751qOHrUgfMAAOiMtBjORwHvyNtpSiOwgVRMwWY7ChhKPRZKAQBclZqhHwa8NKqmYIMJpmBD5WVRLw98L9j9q6fw6SsFADBFNRwNAk7pu5WXhfeIsKEEU7C5BgHv3UE1HH2zA+cBANBlEVerO0ptLoANI5iCDZRGhG4Hu3fP0oozAADMkPotRVulbyvowC1sPMEUbJg0EhSyWqoD5wAAsCkGqQ1CJO/mZbHjJxQ2i2AKNk8d0GwHu2+PrbQCANBeNRw9D9oUXIU9bBjBFGyQNAIUrXLoTLUUAMC11MHUabBLdzstEgRsCMEUbJajNH8+kqM04gcAwBzSojERW0ComoINIpiCDZFGfu4Eu1+nQUvQAQAWIi0ecxLsam7nZaHiHjaEYAo2R8SAZpBG+gAAuL6IIc0gLRoEdJxgCjZAXhb7WZbdCnavTtIIHwAAN1ANR0+zLDsOdg23VN7DZhBMQcelkZ6Q1VIdOAcAgL44SIvKRHIvL4tdP8HQbYIp6L6DgA3Pj6vh6EkHzgMAoBdSe4SIg52qpqDj8qqq3CPoqLwsdrIs+zjY/alH8nb0lgIAWLy8LOrVjreDXdp3quHoUQfOA5hAxRR0W8QeS0dCKQCApYnYCF3VFHSYiinoqLws9rIs+yDY/TmthqOdDpwHAEBv5WVRt0y4HewOH1bDkR6m0EEqpqC7IlZLRRzBAwBYtf2AV/wgtckAOkYwBR2Ul8VBwLn/J+b+AwAsXzUc1X2mHgS71FtWfYZuEkxBx+Rl8XrQP5qqpQAAVmeQFp2J5F5qlwF0iGAKumeQRnQieVANR0/9LAIArEZabCbiYKiqKegYzc+hQ/Ky2M2y7KNg96QeqduxEh8AwOrlZVEPDt4KdunvV8NRxH6u0EkqpqBbIi5lOxBKAQCsTcR2CoPUPgPoAMEUdEReFncDLtt7Wg1HEcM4AIBOqIajJ1mWPQ52N7b1N4XuEExBd0QMaCIuVQwA0DURQ5r387LY6cB5QHiCKeiAvCwGaeQmkpM0QgcAwBpVw9HzLMsOA94DlfvQAYIpWLM0vz3iKJVqKQCA7jhKi9JEcicviz0/g7BegilYv/pNwFaw+3CYRuYAAOiAtBhNxMFSVVOwZoIpWKO8LHazLLsX7B6ceQMAANA91XD0sG63EOzW3MrLQiU/rJFgCtYrYkBzkEbkAADonkHAe3KU2msAayCYgjVJIzO3g13/Z2kkDgCADkqL0xwHuzdbQQM56ATBFKxBGpGJ+McvYt8CAIBNMwjYCP3dvCx2OnAeEI5gCtajDmi2g1374zQCBwBAh6VFaiK2nFDZD2sgmIIVSyMx0SqHzpRHAwBslDqYOg12y27nZbHXgfOAUARTsHpHaR57JEdp5A0AgA2QFquJ2IZB1RSsmGAKViiNwNwJds1Pg5aCAwBstGo4epRl2Umwu7idl4W+qLBCgilYrYgBzSCNuAEAsHkihjSDtFgRsAKCKViRvCz2syy7Fex6n1TDkXJoAIANVQ1HT+tFbILdvy0V/7A6gilYgTTiEvGPmzJoAIDNd5AWs4nkXl4Wu352YfkEU7Aag4ANz4/TCBsAABsstWWIOMiqagpWIK+qynWGJcrLYifLso+DXeN6RG1HbykAgP7Iy6JeZXk72C19JzWBB5ZExRQsX8QeS0dCKQCA3tkPeEtVTcGSCaZgifKy2Muy7Hawa3xaDUeDDpwHAAALVA1HT+rFbYJd0+28LLy3hSUSTMFyRayW0vAcAKC/IlZNHaT2HMASCKZgSfKyOAg4B//EHHwAgP6qhqO6z9SDYLd4Ky1mBCyBYAqWIC+L14P+8Yo4ggYAEM0gLXYTyb3UpgNYMMEULMdRGlmJ5EEaQQMAoMfSIjcR2zeomoIlEEzBguVlsVuPqAS7rmf+UAMAxFENR3Uv1WfBbvntvCzMEIAFE0zB4kVcUnaQRs4AAIgjZNVUatsBLIhgChYoL4u79UhKsGv6rBqOIoZxAAChVcPRkyzLHge7BttWoYbFEkzBgqSRk4gBjT/MAABxRXwv+H5eFjsdOA/oBcEULM5BGkGJ5HEaKQMAIKC0+M1hwKduxgAsiGAKFiCNmEQcLVItBQBAHdKcBrsKd/Ky2OvAecDGE0zBYtQr0m0Fu5aHaYQMAIDA0iI4EVdoVjUFCyCYghtKIyX3gl3HM3+IAQC4UA1HD7MsOwl2QW7lZbHfgfOAjSaYgpsL2fA8jYwBAMCFkFVTaREk4JoEU3ADaYTkVrBreJJGxAAA4KW0KM5xsCuyFTSQg4URTME1pZGRiNVS/vACADDNILV9iOTdtBgScA2CKbi+g4ANz4/TSBgAAFyRFseJOHhrRgFcU15VlWsHc0ojIh8Hu271yNeulfgAAGiSl0X9nnE72IV62yAuzE/FFFxPxFGgI6EUAAAtHQS8UKqm4BoEUzCnvCz2siy7E+y6nQYN4wAAuIZqOHpUL5oT7Npt52URMZCDGxFMwfwijoQcVMPRNztwHgAAbI6IIc0gLZIEtCSYgjmkEZBoc+VP0ogXAAC0Vg1HT+vFc4JdsS0zDWA+giloKY18DAJeL+XIAABc10FaRCeSe3lZ7PqJgXYEU9DeII2ARHKcRroAAGBuqR1ExMFdVVPQUl5VlWsFDdKIx0fBrlM9srWjtxQAADeVl8XzgC0x3tESA5qpmIJ2Io54HAmlAABYkP2AF1LVFLQgmIIGeVnczbLsdrDrdFoNRxFLrgEAWIJqOHpSL6oT7Npu52XhPTU0EExBs4gjHRFHtAAAWK6I7zEP8rLY6cB5QGcJpmCGNMIRbS78SRrRAgCAhamGo7rP1GGwK7oVtPk7tCaYginysng9LW8bjWopAACW5SgtshPJvbws9vxEwWSCKZjuKI1wRPIgjWQBAMDCpcV1Ig7+qpqCKQRTMEEa0bgX7Nqc+YMJAMCyVcPRwyzLngW70LfzsjAzASYQTMFkEQOagzSCBQAAyxayaiq1CwHGCKbgkjSScTvYdXmWRq4AAGDp0mI7j4Nd6e2ggRzMJJiCMWkEI2S1VAfOAQCAWA4CNkJ/Py+LnQ6cB3SGYApedZBGMiJ5nEasAABgZdKiO0cBr3jE5wxTCaYgSSMX7we8HqqlAABYlzqkOQ129e+kxZYgvEwwBa+IOHJxmEaqAABg5dLiOxFbaaiagkQwBS+qpeoRizvBrsWpP4gAAKxbWoTnJNiNuJUWXYLwBFPwQsSAZpBGqAAAYN1CVk2lxZcgNMEU4eVlUfdYuhXsOpykkSkAAFi7tBjPcbA7sRU0kINXCKYILY1QRPxj4A8gAABdUw8YnwW7K++mRZggLMEU0Q3SSEUkx2lECgAAOiO1mYjYYsNMBkLLq6qKfg0IKo1MfBzs2dcjULtW4gMAoKvysqjfq24Hu0FvGzwmKhVTRBZxZOJIKAUAQMcdBLxBqqYIS8UUIeVlsZdl2QfBnvtpNRyZvw4AQOflZVFXD90OdqcOq+FIL1jCUTFFVBFHJCKOPAEAsJkivnc9SIszQSiCKcLJy2IQcM76STUcPerAeQAAQKNqOHqaZdmDYFdqK2jzd4ITTBFKGoEIOfrSgXMAAIB5DNLiPZHcy8ti108JkQimiOYojUREcpxGnAAAYGNUw9E3UzgV8TMLhKH5OWGkkYePgt3xeoRpJ/1RBwCAjZOXxfOArTje0YqDKFRMEUnEkYeBUAoAgA23H/AGHmmEThSCKULIy+JuwOVmT6vhSBkwAAAbrRqOnmRZ9jjYXdzWJ5YoBFP0XhppiBjQRBxZAgCgn0IuYJSXxU4HzgOWSjBFBAcB56SfpJElAADYeNVwVPeZOgx2J7eCNn8nGMEUvZZGGCKOrqiWAgCgb47S4j6R3MvLYs9PMn0mmKLvBmmkIZLDNKIEAAC9kRb1iTjorGqKXhNM0VtpZOFesDt8FrSfFgAAAVTD0cMsy54Fu9e387IwI4LeEkzRZxFHFg7SSBIAAPRVxKqpo7SoE/SOYIpeSiMKt4Pd3WdpBAkAAHorLfJzHOwObwUN5AhAMEXvpJGEiNPZ/KECACCKQcBG6O+nxZ2gVwRT9NFBwIbnj9PIEQAA9F5a7CfiYLR+svSOYIpeSSMI7we7q2eqpQAACKgOaU6DPe07aZEn6A3BFH0TctQkjRgBAEAYadGfiAse6StLrwim6I00cnAn2B09Vc4LAEBUafGfk2BPfzsvCzMm6A3BFH0SMaAZpJEiAACIKmJIM0iLPsHGE0zRC2nE4Fawu3mSRogAACCsajh6mmXZcbDnvxV0GiM9JJhi46WRgogvyv4QAQDACwdpUaBI3k2LP8FGE0zRB4M0YhDJcTUcPfHTCwAALxuhR2ztYQYFGy+vqspdZGOlEYKPg93BeiRoR28pAAB4VV4W9WrV28EuyzvVcPSoA+cB16Jiik0XcYTgSCgFAAATRWyEbpVuNpqKKTZWXhZ7WZZ9EOwOnlbDkXnkAAAwRV4WdcuL28Guz2E1HOlBy0ZSMcUmi1gtFXEECAAA5rEf8GodpEWhYOMIpthIeVkMAs4dPzF3HAAAZquGo7rP1INgl2nLlD42lWCKjZNGAiJWDqmWAgCAdgZp0aBI7uVlsevng00jmGITHaURgUgeVMPRUz+tAADQLC0WFLHnkqopNo7m52yUNALwUbC7Vo/07FiJDwAA5pOXRT24eyvYZbtfDUcR+/GyoVRMsWkijgAMhFIAAHAtEdthDDRCZ5MIptgYeVnsB1z29bQajpTjAgDANVTD0ZMsyx4Hu3bb+tOySQRTbISU+EecIx5xqVsAAFikkAsn5WWx04HzgEaCKTbFQUr+I3mcRngAAIBrqoaj51mWHQa7flsaobMpBFN0Xkr6Q45ydOAcAACgD47SokKR3MnLYs9PL10nmGITDFLiH8lhGtkBAABuKC0mFHHgV9UUnSeYotNSwn8v2F068wcEAAAWqxqOHmZZdhLsst5Ki0hBZwmm6LqIAc1BGtEBAAAWK+KCSkdpMSnoJMEUnZWS/VvB7tCzNJIDAAAsWFpc6DjYdd3Sv5YuE0zRSSnRD1kt1YFzAACAPhsEbIT+flpUCjpHMEVXHQRseH6cRnAAAIAlSYsMRRwENzODThJM0TkpyX8/2J05CzrfHQAA1qEOpk6DXfnbaXEp6BTBFF0UcfTiKI3cAAAAS5YWG4rYRkPVFJ0jmKJTUoJ/J9hdOQ0axgEAwNpUw9GjLMtOgt2B7bws9LWlUwRTdE3EBH+QRmwAAIDVihjSDNJiU9AJgik6IyX328HuyEk1HCmnBQCANaiGo6f1IkTBrv2W/rZ0iWCKTkiJfcQXR2W0AACwXgdpMaJI3s3LYtfPHV0gmKIrBim5j+Q4jdAAAABrktpqhFyAqQPnAFleVZWrwFrlZbGTZdnHwe5CPSKzo7cUAAB0Q14WzwO2FnknNYGHtVExRRdE7LF0JJQCAIBO2Q94O1RNsXaCKdYqL4u7WZbdDnYXTqvhSLNBAADokGo4elIvThTsnmznZeGzCWslmGLdIib0Gp4DAEA3RayaOkjtVWAtBFOsTUrmo83hPjGHGwAAuqkajuo+Uw+C3Z6toCuk0xGCKdYiL4vXg1YORRyBAQCATTJIixVFci8viz0/payDYIp1OUrJfCQP0ggMAADQUWmRooiD6KqmWAvBFCuXl8VuncgHu/JnXugBAGAzVMNRvXL4s2C363ZeFmZ4sHKCKdYhYsPzQRp5AQAANkPIqqnUdgVWRjDFSqUE/nawq/6sGo4ihnEAALCxquHoSZZlj4PdwW2riLNqgilWJiXvEaezeWEHAIDNFPG9/Pt5Wex04DwIQjDFKh2kBD6Sx2mkBQAA2DBp8aLDgPfNjA9WRjDFSqTEPeJog2opAADYbHVIcxrsHt7Jy2KvA+dBAIIpVqV+Md8KdrUP0wgLAACwodIiRhFbkqiaYiUEUyxdStrvBLvSZ17IAQCgH6rh6GGWZSfBbuettHgVLJVgilWIGNAcpJEVAACgH0JWTaVFrGBpBFMsVUrYbwW7yidpRAUAAOiJtKjRcbD7uRU0kGOFBFMsTUrWI1ZLeeEGAIB+GqS2HZG8mxazgqUQTLFMBwEbnh+nkRQAAKBn0uJGEQffzQhhafKqqlxdFi4l6h8Hu7L1yMmulfgAAKDf8rKo3/NvB7vNbxuEZxlUTLEsERP1I6EUAACEcBDwNquaYikEUyxcXhZ7WZbdDnZlT4OW9AIAQDjVcPSoXvQo2PPezstCP10WTjDFMkRM0g+q4eibHTgPAABgNSJWTR2kRa5gYQRTLFReFgcB51qfpBETAAAgiGo4elovfhTsfm+ZKcKiCaZYmJScRyztjDhSAgAAvPgscBbsOtzLy2K3A+dBTwimWKRBStAjOU4jJQAAQDCpnUfEwXlVUyxMXlWVq8mNpcT8o2BXsh4Z2dFbCgAAYsvL4nnAlibvaGnCIqiYYlEiJuZHQikAACDLsv2AF+FII3QWQTDFjeVlcTfLstvBruRpNRxZKhUAAKin9D2pF0UKdiW29dtlEQRTLELEaqmIIyIAAMB0ET8jHORlsdOB82CDCaa4kbwsBgHnUp+kEREAAIBz1XBU95k6DHY1toI2f2eBBFNcW5pPHLF0U7UUAAAwyVFaJCmSe3lZ7Plp4LoEU9zEUUrII3mQRkIAAABekRZHijh4H7G9CwsimOJaUiJ+L9jVO1OmCgAAzFINRw+zLHsW7CLdysvCzBKuRTDFdUUMaA7SCAgAAMDMzw4Br85RavcCcxFMMbeUhN8OduWepZEPAACAmdJiSY+DXaWtoIEcNySYYi4pAQ9ZLdWBcwAAADbHQcBG6O/nZbHTgfNggwimmFf94rod7Ko9TiMeAAAAraRFkyI2BdcInbkIpmgtJd8RK4dUSwEAANdRhzSnwa7cnbRYFrQimGIeR2necCSHaaQDAABgLmnxpIitUPTnpTXBFK2kxPtOsKt1qgwVAAC4ibSI0kmwi7idl4WZJ7QimKKtiAHNII1wAAAA3OizRcCrN0iLZ8FMgika5WWxn2XZrWBX6iSNbAAAANxIWkzpONhV3AoayDEnwRQzpYQ7ZLVUB84BAADoj3pq21mw+/luWkQLphJM0eQgYMPz4zSiAQAAsBCpTUjEQX8zUZgpr6rKFWKilGx/HOzq1CMYu1biAwAAliEvi/qzxnawi/tONRw96sB50EEqppglYrJ9JJQCAACWKOJqdVY7ZyoVU0yUl8VelmUfBLs6p9VwZP4zAACwVHlZ1K1Dbge7yofVcKSXL1eomGKaiNVSEUcuAACA1Yv42eMgLa4FrxBMcUVeFgcB5zyfmPMMAACsQjUcPc2y7EGwi71lSh+TCKZ4RUqwI5ZXqpYCAABWaZAWX4rkXmobAy8JprjsKCXZkRynEQsAAICVqIajbwYtCtBnildofs5LeVnsZln2UbArUo9Q7KQ/CgAAACuVl8XzgK1U7lfDUcS+xkygYopxEef7DoRSAADAGu0HvPgDjdC5IJjiXF4WdwMuV3paDUea7wEAAGtTDUdPsix7HOwObOvzywXBFBciBjQRRyYAAIDuiRjSHORlsdOB82DNBFPU1VKDgHOaT9LIBAAAwFpVw1HdZ+ow2F3YClogwSWCqeBSQh0xnRBrSZoAACAASURBVFctBQAAdMlRWpwpkjt5Wez5KYxNMMUgJdWRHKYRCQAAgE5IizJFLBpQNRWcYCqwlEzfC3YFzrzwAQAAXVQNRw+zLHsW7ObcysvCjJbABFOxDQI++4M0EgEAANBFIaum8rJ4vQPnwRoIpoJKifTtYM/+WRqBAAAA6KS0SNNxsLuzFTSQCy8TTMWUkuiQ1VIdOAcAAIAmg4CN0N9Pi3MRjGAqpjqg2Q72zB+nkQcAAIBOS4s1ReyNa4ZLQIKpYFIC/X6wp32mWgoAANgwdTB1Guym3U6LdBGIYCqeiKn7URpxAAAA2Ahp0aaILVhUTQUjmAokJc93gj3t06BhHAAAsOHS4k0nwe7jdl4WZrwEkldVFf0ahJGXxdMsy24Fe9r3rcQHsFj/3d/6Q/UiGrv1Tj9p2vOltxlXtr/0PqTK8qu7aHiv0vRO5pPLG0x4wNXzmr3P5mPO//6q6SFXnsfkvcy1zyvfrmZ/f+LuGh5z9R6f20n/tXLleTRei4afmRbXct5b2G6fN/tZvnKt2xyz+aTmO2bzIZvPq/H3/uoOGk9z3vvV5rxu+DHpOj9n1U1ffCb/Xh998qLyhg2Vl0X9N/ejYPevbseyU/nZDUEwFUReFvtZln012NM+qYYj85MBpvjvf/QPXbxGvgwJqip7GTqlr3eaFswQTk07pnBq2klc592ncGryBsKpOY7ZeITehVP1B/u7n/yUBYD6IC+LerD9XrCnfVwNR/sdOA+WTDAVQF4W9YeMusfSVrCn/raV+ICobv3o5y7Cpjpken3s/ztVVs0Mmq58SGrxVkE4Ne2YwqlpJyGcmvH9xh1c45jNJzXfMZsPKZya4/FLCKeeVS9CKX1WeyLwZ7rPVsPR0w6cB0v0bS5uCIOAL2DHQimg7z77Y5+7CJwuQqe99P+Z07bzLJ/5oSfPX/2QdPnrSV5rCqfyVz9IXdn+0kFenOGrH1LzPJ/5gT5v+Kz2Wn4p1JnwgKvnNXunzcfM5w6nmq73lefR4sya9nnleVz6h8vfn/i8Gx5z9R7PH05deR6NO5m9QZuf7TbbzL/Pm/0sX7nWbY7ZuM/5fkja3L/G82r8vb96lMbTnPd+TfxZvnRec+7zOud05XW34XW64QYc1ytSf/JTpkD1ST2lLS+Lo4ArrB+l9zf0mIqpnsvLoh4t/zjY0zYfGeidz/7tz+2OhVC7WXX+/5mDDk3hRdOIvMqp9jtVOdX+MSqnxrdROTVpA5VT4+c194vPe3/wUyML//RYXhbPm6bY99A71XD0KPq97zMVU/0XsfH3kVAK2GT/w5c/dxE+7aXpeLfnreTJWlTWqJya/gCVU5P/QeXUDc5x4jYqpyZtoHJq/LxaV06d95P6A/2kIqhXq/tasOdch62CqR5TMdVjeVnUH2g+CPa0T6vhqPUqPwDr9j9++XMXU/DqMGqvyrLbr5xSY4VR8xNQOTWZyqm2W6ucmneb+fepcmrSBiqnxs9r5oOeZdV5KKWfVBB5WdQB5O1gT/uwGo4GHTgPlkDFVL9FrJY66MA5AEz1P335cxcNyeswai/PslszCz8aK4xUTrU8xNVzVDnVcmuVU/NuM/8+VU5N2kDl1Ph5TX2dfpxl2f4f6CcVzX7Adi0H9cqE1VAA20cqpnoqL4s6oPlysKd9Ug1HGuMBnfI/H33u9erFlLyL/yY2Jm8s/FA5lTZXOTV9n632Mtc+VU7dbJv596lyatIGKqfGz+uVfzj8g59UQRJVaoT+brCnXy9wtd+B82DBBFM9ZClRgPX6Qw8+v1tV1d0URJ2X2l/nA6JwavJBhFOz9tlqL3PtUzh1s23m36dwatIGwqnx86rOzqukflIz6MgCf+Z72+rr/WMqXz8dBXyBeiCUAtblcw9e9ImqsrwOo+r/ti5PzbnO1BrT+iYfxLS+Wfs0ra/9Tkzra79P0/qmntfqp/U9y7N8/7/95O943xtcvdhTXhaDgLNkBmngjx5RMdUzeVnUfUs+Cva061GjHSvxAav0uR///OvnIdSLyqg7F4e+HJhc/jurcmrmQWdvr3Lq032qnJpK5dTkDVROzXHMxiOsrXLqvJ/Uf/vJ3/Gel5fysng6rU1Aj92vhqOI/ZR7SzDVM0FXaHivGo6OOnAeQM997sc/v5MqovZfeRPY8MFJODV2zKYNhFOtCaemE05N3kA4NccxG4+w8nDq8L9+5Xf0k+KKqCux1wvJKEzoD8FUj+RlUX9Y+lqwp31aDUc7HTgPoKfe+PHPv/7JizDqYOaIpHBq4tcTj9m0gXCqNeHUdMKpyRsIp+Y4ZuMRVhJOnfeT+q9f+R39pJgqL4tH49XbQRxWQ83/+0Iw1SN5WdTN77aDPW3N74CFe+Nimt6L/87f6DWGKZlwatrXE4/ZtIFwqjXh1HTCqckbCKfmOGbjEZYaTj1LoZR+UsyUl0U9UP9xwKv0mWo4et6B8+CGXnMB+yE1vosWSj0WSgGL9MaPf37vjR///MO0ys1Xx0cfW/3BzC815L7SmPdyw+4Wu2z4+vI/XDnPFsd4rWGbvGEnl59Hm+fVeD0bn9fsa51NuN4Nh7jiynWZ8IB5r3fzMVtcvMv7bHhI0/1Ne5lrn00/hy0uXeNjrt7j+V15Ho07me9n/brbzL/Pm/0sX7nW13jtmXBS8x2z+ZDN59X4e391B42nOe/9anNe1/lhvfr4up/UnlCKNlI4cxjwYmnn0hMqpnogJeRPA67EJyEHbuyNnzjvG7Wf/ttuGtZXOTXj+yqnWu9U5VT7x6icGt9G5dSkDXpYOXX4+z+hnxTzycvi9TSwFu0zoRk0PaBiqh8GAV+ADoVSwE289ROfv/vWT3z+0WsvSt/ff1l12lR90uaYKqcmfj3xmE0bqJxqTeXUdCqnJm+gcmqOYzYeYSGVU3U/qXeEUlxHagR+EPDiqZrqARVTGy7oKgz1H+0dqzAA83rrK2PVUdWr05/nrXhROTXj+yqnWu9U5VT7x6icGt9G5dSkDTa8cuq8n9Tv/4Spe9yMVdrZRIKpDRf0hed+NRw97MB5ABviC1/5fB3i71dZdu+VM75hiCOcmvF94VTrnQqn2j9GODW+jXBq0gYbGk49TqGUQVduTOECm0gwtcHysthPzXkjeVYNR7vR7z3Qzhe+8vn9VNZ+6+IBiw5xhFMzvi+car1T4VT7xwinxrcRTk3aYMPCqQe//xO/E3H6FUuUl0U9iH8v2DV+UA1Hfpc2lGBqQ2luBzDZH/7K519PYdR5M/NJf+WEU9MecJVwajLhVNuthVPzbjP/PoVTkzbYgHCqrvA4+P2f+B2zAFg4i2OxaTQ/31wHAV9ojoVSwDR/+Cuf3/nDX/n8wxTav2xmPqn37KIbh2uIPuP7GqK33qmG6O0foyH6+DYaok/aoOMN0U+zLNsTSrEsKZyJ2HPJ79SGUjG1gVIC/nGwp12PKu1KwIHLbv/keUPzQVXNLllXOfUplVPjm6icylROtTiR9huonJpjJzErp06yLLv7X35cPymWK82wefpy1eE4zLDZQCqmNlPE9PtIKAWMu/2Tn9+9/ZPnFVJ1UH9v7ioOlVMzHnCVyqnJVE613Vrl1LzbzL9PlVOTNuhY5dSD//Ljv7MnlGIVUiPwiD2XVE1tIBVTGyboKgunqVrKH3GgDqTq18HBtBVJ567iUDk14wFXqZyaTOVU261VTs27zfz7VDk1aYM1V06d95P6Lw+e+cDMygVdxf2wGo4GHTgPWhJMbZi8LJ6Ory4VxP1qOPKHHIJ7+6fe2E0Vo7ebPpALp6Z/LZy62Fw4NX2frfYy1z6FUzfbZv59CqcmbbCmcOr0fOreg2dP53skLEZeFvX7p4+CXc46DN5R2LA5TOXbIHlZHAQMpU6EUhDb2z/1xs7bP/XGw/Sm6nzEr2kqk2l90782re9ic9P6pu+z1V7m2qdpfTfbZv59mtY3aYM1TOs7ybNsVyjFOlXDUf3zdxzsJmwFbX+zsVRMbYjUvO55wJX4PpteTIFg6kAqTdmb2tRc5dSMXTZ8rXLqYnOVU9P32Wovc+1T5dTNtpl/nyqnJm2wosqpB//5wbOI/X3oIJ8l6ToVU5tjEPCF5NgLCcTzvwzfeP1/Gb4xyPMXTc1nXQCVUzN22fC1yqmLzVVOTd9nq73MtU+VUzfbZv59qpyatMGSK6fqKUT3hVJ0SZrSFnIBrQ6cAy2omNoAeVnspFWnIjEvGAL69uEbB9WlIL5VFY3Kqem7bPha5dTF5iqnpu+z1V7m2qfKqZttM/8+VU5N2mAJlVPn/aT+s6l7dFReFnXV1Haw+/NONRw96sB5MIOKqc0QscfSkVAK4vj24Rt3v334Rv1m6cv5perQVlU0Kqem77Lha5VTF5urnJq+z1Z7mWufKqduts38+1Q5NWmDBVdOndSrSAul6Lj9gDfoKE1lpMNUTHVcXhb1sugfBHvap9VwtNOB8wCW7NuHn660d/lIVwoVVE6NfVvl1MtjNm2gcqo1lVPTqZyavIHKqZce/KcjU/fYDHlZPJn0vqvnDqvhaOBHtLtUTHVfxGopf9ih577jp994/Tt++o2j8ZX2LrtSqKByauzbKqdeHrNpA5VTramcmk7l1OQNVE696CcllGLDRKyaOkjtcegowVSH5WUxCDgH+MQcYOi37/jpN/bTyjDvNgcZl74WTo19Wzj18phNGwinWhNOTSecmrxB4HCqDqX2/tPRs4iDyGywajiq34M9CHYPt9JiYnSUqXwdFXhJz8+kF0ugZ77jp6dP22ueAnbpa9P6xr5tWt/LYzZtYFpfa6b1TWda3+QNgk3re5ZCKf1Q2UiBP2u+XQ1HTzpwHlyiYqq7jgK+UDwQSkH/fMfPvPH6d/zM7Gl7KqdmnYjKqUlfTzxm0wYqp1pTOTWdyqnJGwSqnDr+T0fPdoVSbLK0yFTEKahHHTgHJhBMdVBeFnVVwb1gT/tMeSX0z3f8zBt3syyrVyh6tzGkEU7NOBHh1KSvJx6zaQPhVGvCqemEU5M3CBBO3f+PX34WsT8PPVQNR/U01GfB7u2tvCz8DneQYKqbIia5g5TcAz3wnT/zxuvf+TNvPHoty772Sq884dREwqkZ3xdOtd6pcKr9Y4RT49sIpyZtcOn3/izL8s/+xy/rJ0XvhKyaSlMZ6RDBVMfkZXE34PKdz6rhSFkl9MR3vqiSqqfl3smuE9IIp2aciHBq0tcTj9m0gXCqNeHUdMKpyRv0LJyqK0p2/uOXnz5tcQjYKKnf0uNgd23LKvDdo/l5h6Tk9mnAlfg0oYMe+M6feaNehvfhtHB97sbgGqLPOBEN0Sd9PfGYTRtoiN6ahujTaYg+eYMeNEQ//g+m7tFzeVnU798+DnifLbrVISqmuuUgYCj1WCgFm+87f+aN/RSsT634VDk1Yyeztp94IiqnJn098ZhNG6icak3l1HQqpyZvsOGVU/eFUkSQwpnDgDfbjJ0OUTHVESmpfhpwJT5JNWywupdUqpK60/ZZqJyasZNZ2088EZVTk76eeMymDVROtaZyajqVU5M32LDKqXpBnr3/8LdN3SMOM3dYNxVT3TEIGEodCqVgc/2Rv/PG3dfyT3tJtaVyasZOZm0/8URUTk36euIxmzZQOdWayqnpVE5N3mCDKqfO+0kJpYgmLUIVcYV0Cxp0hIqpDsjLYi/Lsg+CPe16NGrHSnywef7I3zmvkqrfvLx7cfLtKiRepXJqxk5mbT/xRFROTfp64jGbNlA51ZrKqelUTk3eoOOVU8f/4W8/NXWP0PKyeBJwIa73LMS1fiqmuiFiOn0glILN80f+zhu7WZY9GQ+lstYVEq9SOTVjJ7O2n3giKqcmfT3xmE0bqJxqTeXUdCqnJm/Q4cqp+0IpOBfxc+kgTWVkjQRTa5aXxX7AVPqkGo6UTcKG+aN/9416gYaPsiy7NenMhVMz/k04NZVwajLhVNuthVPzbjP/PnsdTtUV/J/99z/21PtSeDGlrx58PA52LbaCBnKdYirfGqVk9nnA3lKazMEG+aN/99UG54uZvnPpMZf/wbS+iUzrm/F90/pa79S0vvaPMa1vfJveTeur+0nt/fsfe6qCH8ZYlIt1UDG1XgcBf+GPhVKwOf7o3z2fuvd0vMH5YiokLj3m8j+onJpI5dSM76ucar1TlVPtH6NyanybXlVOHf/7H3u6K5SCq1I4E7HnksrJNVIxtSYpif442NOuy6V3JdGwGdLUvS9PO1mVU+2OOfHfVE5NpXJqMpVTbbdWOTXvNvPvc+Mrp9771o891egYGuRlUX9m2w52nd6phqNHHTiPcL4t+gVYo4h/EI+EUtB9f+xnX526N009UD3rs0BdITFvOPXa5Q/X+exPJE3HuPzwpnPOUrXIrA/kTfuYdMpX/u3SP8z9vNuEKZdOND+PdPKxb+evfMBsc22uXM8FP6+s1T3NZ4ZTl59Hq3vedD0bn9fsa51NuN4Nh7h6jpevy4QHzHu9m485+3dh4j4X8rrw6pnN/Tt36R8af25bPObqPZ4/nLryPBp3MnuDVr+zLbaZf583+1m+cq2v8doz4aTa/JDUA6R3v/VjT1XuQzv1AOXXgl2r+jO6YGoNTOVbg7ws9po+8PXQadAwDjbKH/vZT6fuLWK6iGl9M/7NtL6pTOubzLS+tlub1jfvNvPvc+Om9T3L8mxXKAXtpcqhk2CXbDsvC43Q10AwtR4RA5qDajgyjx867I//7Bv7eZY9GS/bFk7N2KdwaurXwqmLzYVT0/fZai9z7VM4dbNt5t/nxoRT9Qpje9/60aeq9mF+BwGv2UFapIwVEkytWF4WB9OWWu+xE3N1odv++M++UQfmX60XZLhOiCOcanfMif8mnJpKODWZcKrt1sKpebeZf5+dD6fe+9aPPt3/1o9qcg7XUQ1HT1O4G8mWmT6rp/n5CqXk9XnAlfg+m17UgI75X3/2zdfTXPrbl/v2XKdxuIbo7Y458d80RJ9KQ/TJNERvu7WG6PNuM/8+O9cQ/Syrqrvf+lFT9+CmAn+Gfdtq8qujYmq1BgF/oY+FUtBN3/Vz5/2k6j+4t7MJ1Scqp8b3qXJq6i4bvlY5dbG5yqnp+2y1l7n2qXLqZtvMv89OVU49q1eBFkrBYqR2LBH7Luk1tUIqplYkL4udLMs+DvFkP1WvfrKjtxR0z3f93Bt7qVJqq6ouVc2onJqxT5VTU3fZ8LXKqYvNVU5N32ervcy1T5VTN9tm/n2uvXKqnnJ08K0f+ch7T1iwvCyej/chDeJ+NRw99LO0fCqmVifiD/RAKAXd810/9+Z+lmUfXFRw5vmlqhmVUzP2qXJq6i4bvlY5dbG5yqnp+2y1l7n2qXLqZtvMv8+1Vk69960f+WhfKAVLsx/w0g40Ql8NwdQK5GVx92KqTCCn1XCkaRx0zHf93JupyfnlD3fCqUw4denbwqmXx2zaQDjVmnBqOuHU5A1aHPMsz7K3v/UjH3nfCUuU+i2dBLvG20FXJlw5wdRqRPxDGTFRh876rp978/Xv+rk368rNdz89R+HUpIcLp8a/LZx6ecymDYRTrQmnphNOTd5gxu7O+0n9ux/5SD8pWI2In/EOUlselkgwtWR5WQwCzsU9sYIBdEcdSqUm5/eunpRwatLDhVPj3xZOvTxm0wbCqdaEU9MJpyZvMGF3dT+pvX/3Ix89bz4bYBGq4aj+fTsMdjG3ghaarJTm50sUeGnNz6QXLWDN7v69N3c+qc6bnN+afSaXGwrnl76rIfr0fWqIPnWXDV9riH6x+dVP3BqiX+yz1V7m2qeG6DfbZv59LqUh+nv/ztQ9WIvAn3HfVnyxPCqmluso4C/sA6EUdMPdv/fmbpZlT1/Lm0KpTOXUlIernBr/tsqpl8ds2kDlVGsqp6ZTOTVxg7M8z94RSsH6pMWtIvZd8rqzRIKpJcnLYnfytJleO6tXLgj2nKGTUij15CIcv96HO+FUJpy69G3h1MtjNm0gnGpNODWdcOqVDep+Untnf+ujR3OcHrAE1XD0MP1ORnIrLwt9lJdEMLU8ERPVg5SgA2t09++9uT8eSl0QTrU/hnBqfJfCqanHbNpAONWacGo64dS5x1l+Hko9ne/MgCUKWTWVpjKyYIKpJUhJ6u3ePbHZnqXkHFiju189D6W+Om0asXCq/TGEU+O7FE5NPWbTBsKp1oRT0wUPpw7Pfviju2c//JHBT+iQ1G/pcbB7shU0kFs6wdSCpQQ14nQ2v6CwZi9DqaV8uBNOZcKpS98WTr08ZtMGwqnWhFPTBQyn6hYR75z98EfaREB3HaTf1Ujez8tix8/kYgmmFq/+5dzu25Nq8NgKBbBef+LTSqkXhFNjB7nZMYRT47sUTk09ZtMGwqnWhFPTBQqnXvST+mH9pKDL0qJXEVvYmCm0YIKpBUrJacTKIdVSsEZ/4qtv1r+DX110IDNpJ8Kp9LVwauzbwqmXx2zaQDjVmnBqugDh1OMUSuknBZuhDqZOg92r23lZ7HXgPHpDMLVYg2l9XXrsMCXlwBr8ia++WY/YfPniyMKpscdcOcjNjiGcGt+lcGrqMZs2EE61Jpyarsfh1OE3f/iju9/UTwo2Rlr8KuKUW1VTCySYWpCUmN7rxZNp7zRo6SZ0QgqlrrzuCKfGHnPlIDc7hnBqfJfCqanHbNpAONWacGq6noVT5/2kvqmfFGyktAjWSbC7t52XhZlDCyKYWpyIAc0gJeTAiv3Jh5NDqQvCqbHHXDnIzY4hnBrfpXBq6jGbNhBOtSacmq4n4dSzPM/3vqmfFGy6iMHyIC1+xg0JphYgL4u66fCtjX8i8zlJyTiwYhehVOOHtcv/IJwaO8jNjiGcGt+lcGrqMZs2EE61JpyabsPDqfN+Uv/2b/62flKw4dJiWMfB7uOWGUSLkVfV1Tc5tJcS0ucBe0u9bSU+WL0/+fDS6nv1G4GGl/FPLv9D0/at/iy8ulFV5Ze+W83Yuvmc22zT7jwvPebKQW52jOs8r08aNmrax6RvX/m3S/8w9/Oe/e20j8v3+NLPwOXvt7nnDV/f9Hllre7pfPen1T1v2qDxec2+1tmE691wiCuuXJcJD5j3ejcfc/5f4sW8Lsz3s9n0c9ji0jU+5uo9nt+V59G4k5u9FrXdZsb2h//2b/62qXvQI4E/G3+2Go4E7DegYurmDgL+4h0LpWD1/tTDN/fzS6FU1qaS4MoDGrZXOdX6GCqnxnepcmrqMZs2UDnVmsqp6Taocuq8n5RQCvontXmJWEGkauqGVEzdQF4WO1mWfbyxT+B66jcTu1big9X6U5cqpSZWzaicak3l1IydzNp+4omonJr09cRjNm2gcqo1lVPTdbxy6lmWZfv/5m+Yugd9lpdF/VlxO9hNfqcajvTKuyYVUzcTscfSkVAKVutyKJVNq5pROdWayqkZO5m1/cQTUTk16euJx2zaQOVUayqnputw5VS9YteeUApCiLhanaqpG1AxdU15WexlWfbBRp789Z1Ww9HOpp48bKJJodQ4lVOfUjk1499UTk2lcmoylVNtt1Y51XKbB//mb/y2ZdUhkLws6tYvt4Pd88NqODJN+RpUTF1fxGopbyhghf708Zu7eT579EXl1KdUTs34N5VTU6mcmkzlVNutVU41bFO3gLgvlIKQIv7eH6R2P8xJMHUNeVkcBJwze2LOLKxOHUplWVaPNG1dK5gQTrUmnJqxk1nbTzwR4dSkryces2kD4VRrwqnp1hxOnaapexEHcyG8tErdg2DXoV4UTcXUNQim5pSWwIz4w2akC1bkTx+/uXMRSl0cUTjVfhvh1Ix/E05NJZyaTDjVdmvh1KVt6n5Su/pJQXiDVDkZyb3U9oc5CKbmNxj/sBjEg5R4A0v2p4/frMPvR5NeZ4RT7bcRTs34N+HUVMKpyYRTbbcWTiUPfu+HfruulPpm2/MD+qkajr4ZtKhD1dScBFNzyMuinlrz7sac8GKc+cWC1clfVErdmnZA4VT7bYRTM/5NODWVcGoy4VTbrUOHU+f9pH7vh/STAj5VDUdHaWpvJLfzstj3Y9CeYGo+EZeAHKSkG1iy/+34zboPx62mzwrCqfbbCKdm/Jtwairh1GTCqbZbhwynzvtJ/d4P6ScFTBQxpBmkNkC0IJhqKS+LuwGXuzxNCTewZH/m59+sf9fuXRxFOHWxfYsjCKdaHXPivwmnphJOTSacart1qHDqvJ/U7/2QflLAZNVwVM8IeBzs8mzr09yeYKq9iAGN8kNYgT/z82/Wv2vvXvkg23Bo4VT7bYRTM/5NODWVcGoy4VTbrUOEUw++8aXfriulVNcDTSKGNO/nZbHTgfPoPMFUC3lZDFLiGclJSraBJfozP/9m3bvuqxdHEE5NPqRwasY+hVNTvxZOXWwunJq+z1Z7mWufQcKp835S3/iSflJAO9Vw9DzLssOAl8sMpBYEUw1Swhnxj65qKViyP/vzb+6kZuevEE5NPqRwasY+hVNTvxZOXWwunJq+z1Z7mWufPQ+nzvtJfeNL+kkBcztKwXYkd/Ky2POjMptgqtlg0rLtPXeYEm1gSf7sz79ZN0N8VL++tAmOhFMX27c4gnCq1TEn/ptwairh1GTCqbZb9yacOsmyfPcbX9JPCphfWlQrYtGHqqkGgqkZUrJ579o72ExnfnFg+fIsO1+B7+JAwqnx7wqnpu9TODV1lw1fC6cuNhdOTd9nq73Mtc+ehVMPvvGlr+9940tf108KuLZqOKrfAz8LdgVv5WVhRtIMgqnZBl0+uSU5SEk2sCTf/fNvDs7Lei/tXjg1/l3h1PR9Cqem7rLha+HUxebCqen7bLWXufbZk3Dq/je+9HX9pIBFCVk1lZfF6x04j04STE2REs3bnTy55XmWEmxgSb77F968W6/QcbF34dT4OQinMuHUpW8Lp14es2kD4VRrwqnpJoRTdSX9Z7/xpa97fwgsTFpk6zjYysGjsAAAIABJREFUFd0KWvjSimBqgpRkRpzOZiQMlui7f+F8Bb6H1/lAIpyafEjh1Ix9Cqemfi2cuthcODV9n632Mtc+NzCcqqfa7HzjS1/XTwpYhkHARujvpsXVuEQwNdlBwIbnj1NyDSzBd//CebPzhy9fW4RTU3cinEpfC6fGvi2cennMpg2EU60Jp6bL8+z4G3/967vf+Ov6SQHLkRbbilgMogJ1AsHUJSnBfH+uB22+M9VSsHRH483Ozwmnpu5EOJW+Fk6NfVs49fKYTRsIp1oTTk10/3d/8Oua9AKrUL8/Pg12pW+nRdYYI5i6KmJqe5QSa2AJvvsX3jyYusKncGrqToRT6Wvh1Ni3hVMvj9m0gXCqNeHUS+f9pH73B/WTAlYjLboVse+S19lLBFNjUnJ5pzMntBqnQcM4WInv+cU3d1/Lsy/PPJZwaupOhFPpa+HU2LeFUy+P2bSBcKo14dSLflK/+4P6SQGrlRbfOgl22bfzsjBjaYxg6lURA5pBSqqBBfueXzzvK/Uoa/OhRjg1dSfCqfS1cGrs28Kpl8ds2kA41VrgcOr4d3/w67u/+4P6SQFrEzGkGaRF18LLBFOfSonlrbbb98RJSqiB5ah/v7Yv9iycStsLp1ofQzg1vkvh1NRjNm0gnGotYDilnxSwdtVwVFdrHge7E1tmLn1KMPUilHo96NzWiM8ZVuJ7fvHN/UlTg4VTaXvhVOtjCKfGdymcmnrMpg2EU60FCafOcv2kgG45SL3uIrmXl8Wun0PB1IXByyXc4ziuhqMnwZ4zrMT3/OJbu7NGQIRTaXvhVOtjCKfGdymcmnrMpg2EU631PJw67yf1r/WTAjoktZcJuRBZB85h7fKquvqmI9QFKIudLMs+7sCprFKdRO/oLQXL8T2/+NbTF1ODZ7++ftL08lvN/HLi3i+/pDceomGDNse47JM2OxnTeB0m7KSq8kvfrWZs3XzObbZpd56XHnPlIDc7xnWe1ycNG13rZ6DhH+Z+3rO/nfZx+R5f+hm4/P0297zh65s+r6zVPZ3v/rS6500bND6v2dc6m3C9Gw5xxZXrMuEB817v5mPO/0u8mNeF+X42m34O2/wtmPGY43/9137L1D2gs/KyeD7eCiOId6rh6FHkn0oVUzGXajwSSsFyfM8vvnX0ab+62cPjKqfS9iqnWh9D5dT4LlVOTT1m0wYqp1rrWeXUfaEUsAEiNkIPXzUVumIqL4u9LMs+6MCprNJpNRztxHm6sDp/7u+/tVdVk15TVE61OQmVU+2PoXJqfJcqp6Yes2kDlVOtbXjlVF0pv/ev/tpvmboHbIS8LOqWM7eD3a3DajgK2wM6esVUxGqpiAk0LN2f+/tv1YsoPJw8Eq5yqs1JqJxqfwyVU+O7VDk19ZhNG6icam2DK6fqflK7Qilgw0Ss7jxIbYZCChtM5WUxCDh39ST63FVYoocXrynCqU8Jp8Yec+UgNzuGcGp8l8Kpqcds2kA41doGhlPHqVLqeZszA+iKajiqX7ceBLshW5FXzQ85lS8vi7qy4XnAlfg+k37JgQX683//rbtZln2t3fQq0/ranIRpfe2PYVrf+C5N65t6zKYNTOtrbUOm9b33rw5/K3zPEmBzBf7M/nbE1fOjVkwdBfwBfyCUgsX782kKX9a6gkXlVJuTUDnV/hgqp8Z3qXJq6jGbNlA51VrHK6fqflJvC6WATZcW64pYQRSyaipcMJWXxW6WZfc6cCqrdBa5LBCW7OF40C2cmk44NfaYKwe52TGEU+O7FE5NPWbTBsKp1joaTp33k/qXh78VbqQd6KdqOKpD9mfBbu/tvCzC9diKWDEVcQRpkBJnYIHSFL47l/conJpOODX2mCsHudkxhFPjuxROTT1m0wbCqdY6Fk6d95P6l4f6SQG9E3HxrkGayhhGqB5TeVmc94HpwKms0mk1HIXt7g/L8r2/9NbrVTV73rueU9PpOTX2mCsHudkx9Jwa3+WlnwE9pz49ZtMGek611oGeU+/9fwNT94D+ysvi0aTB4J47rIajMLOewlRMpcQx4h/tiEttwioM8nx2rzqVU9OpnBp7zJWD3OwYKqfGd6lyauoxmzZQOdXaGiunzvtJCaWAACJWTb2fl0WYApNv68A5rMrBxVLugTyO2NEflu17f+mtvSzL3s3Sh4dZI9v5pZHtydtf3upV9YeamSPulx5+5ZgT9n75PGafwfzPs81jXrtc7dBwEo3XYcJO6nBqvHIqP//4XE3Zuvmc22zT7jwvPWbB1+I6z6v+QD6rWuRaPwOX/+3SP0x53vWH7adj//pkyvaT/75dOtEXd3zsZyDPX6nkaXXPm36n2j2vmZrvaT6zcurK73Sbe95UOdX4vGZf62zC9W44xNVzvHxdJjxg3uvdfMzZvwsT97mQ14XLr1+Nv3PP/9+BqXtA/9WLeOVlcViHNcFudz3wcLcD57F0IabypaTxacCV+D5jJT5YvO/9pbeeXw66553qZFrfp0zrG3vMlYPc7BgdndZ3llXnf5Ofp/+efpJldR/Epx/+77+pHyIAcEWaATWzjUZPvR2h2CRKxdQg4A/woVAKFu97f+mtwaTqS5VT7Y9xmcqpscf0r3KqXknnaZ5lT6sXA0RP/5+/KnwCAOZTL+aVl0U9C+qrwS5dXTW124HzWKreV0zlZVFPufmgA6eySvU0iB0r8cFi3fvlt3aqKvt41k5VTrU/xmUqp8Yec+UgNzvGiiqnztL0uvq/p//ir/6mqeQAwELlZVG/v7gd7Kq+Vw1Hve4nGKFiKmJDyAOhFCzFw8ZqEZVTrY9xmcqpscdsRuXUWVW9DKIe/Yu/+puqdAGAZRsELDwZ5GXxsM+f8XtdMZWXxX7AUr9n1XDU+1I/WLV7v/xW3XjwaxeHbawYUjnV+hiXqZwae8yVg9zsGAuonHqWgqiHJ3/lN59OfxQAwHLUIU399jzY5X1QDUe9XZ2wt8GU5mjAotz75bdeTwsozNfwXDjV+hiXCafGHnPlIDc7xjWe17NPqqp+A/jo5K+oigIA1sviZv3T56l8BwF/UI+FUrAUB9dqeG5aX+tjXGZa39hj1jOtr66MOg+jPvjLHwqjAIDOqMOZvCzqlj3vB7sr9XuzvQ6cx8L1smIqJagzGxT3UN10dtdKfLBYdcPzptcTlVOTt284hVaPUTk19pgrB7nZMSY8r7P0hufhB3/5Q9P0AIDOSjOkrsxoCKCXM6T6WjEVseH5kVAKFi+vf7ca9qpyatZ5z3eMy1ROjT1meZVTJymMejjfGQEArEfdCDwvi4PxHrBB1O/Xdvr2VHtXMZWXxV7ALv2nqVrKSnywQPu//NbL15M2r5QqpyZv33AKrR6jcmrsMVcOcq1jXFRHHf3z0lQ9AGAz5WVRVw/dDnb7DqvhaNCB81iY13ryPMZFHPEdCKVgKV6+4Oct9p43bNT4/Vbbz97Ja00nms/8cuLeL59H4yHmfJ5tHnPlj1XT9m1u2KWd1JVTr343n7F18zm32abdeV56zJWDzHWMeiDjvXqk7Z+XHx4IpQCADdfblepmOEhTGXujVxVTqZTvyx04lVU6qYajXjZAg3W6/w/e2s+y7KvzVgtlKqembt9wCq0eo3Jq7DFXDjJz89NPqmzwz0vT9QCAfsnLon5/cy/Yba0XPtvvwHksRG8qplJi2KtytpYiJsSwCuevJ/NWC016zNzfb7W9yqk2J6Fy6rxC6v4/+0sf7gilAICeOkhtCiK5l5fFbl+eb5+m8tUfIrc6cB6rVKekVk6CBbv/D94ajK/wIZyafh7CqYvtWxxhteHUy0Dqn/0lgRQA0F+prU3IBdA6cA4L0YupfHlZNC7n3kN1IryjtxQs1v1/8FZdffl8UtBtWt/08zCt72L7FkdY7rS+OpAa/LMvCqMAgFjysng+PrgcxDvVcPRo059qXyqmIr4BPxJKwVIcTKu+VDk1/TxUTl1s3+IIy6mcqgcrDusVWoVSAEBQvem5NIejPjRC3/iKqbws7mZZ9rUOnMoqnVbD0U6cpwurMataapzKqennoXLqYvsWR1hc5dRxXSX161+0wh4AEFteFk+yLLsd7CIcVsPRRvfb7kPFVMS5pBGTYFiFoza96lROTT8PlVMX27c4ws3P81mWZW//+hc/3BdKAQCci/hZ+SC1N9pYGx1M5WUxCDiH9KQajp504DygV/7i//HWzjzLzAqnpp+HcOpi+xZHuN55nk/b+/Uvfrj761/80N8DAICkGo7qwboHwa7H1sWK4ptqY4OpNI/yoAOnsmqqpWA5BvP29hFOTT8P4dTF9i2OMN95ntR9pH79ix9u9JsPAIAlGqSBvEju5WWxt6nPd5MrplpNuemZBykBBhZovFpKODX54cKp8XNYSzhVv7l679e/+OGeaXsAANOlRcIiFrFsbJujjQymUhLYespNT5xtenkedNgrv1vCqckPF06Nn8NKw6mLKqmIPRUBAOZWDUcPUz/OSG7lZbGRM6w2tWIqYkAzSMkvsEDTeksJpyY/XDg1fg4rCafe+6c/8OHeP/0BVVIAAHMKWTWV2h5tlI0LplICGG35x2fVcGSkHJZjatAtnJr8cOHU+DksLZyqR/g++09/QJUUAMB1pEXDHge7eFubGMhtVDCVkr+I1VIRk15Yur/4D996vWlasHBq8sOFU+PnsPBw6jjPs7pK6mmbswEAYKqIn6Xfz8tipwPn0dqmVUzVP1TbHTiPVXqckl5g8Q7aJEfCqckPF06Nn8NCwqm6l+D9X/v+D/d/7fs/NHUbAOCG0uJhhwGv40ZV3W9MMJUSv4hpp2opWIJULfXi90s49ZJwKm2/+nDqNMuyvV/7/g8ftjkyAACtHaX3WpHcSYvGbYRNqpg6SvMlIzlMCS+wYPmLUOrT1xTh1EvCqbT96sKp81X3fu37Td0DAFi0tIhYxJZAGzPguRHBVEr67nTgVFbpbNPK72DD7F/JHYRTLwmn0vbLD6eOf+37P9wzdQ8AYHmq4ehhGgyMZDsvi42YgbUpFVMRA5qDlOwCC/Z9//Ct/Yt+dcKp6YRTafvlhVP3/8n3fbjfZu8AANxYxKqpQVpErtM6H0zlZVG/ab/VgVNZpZOU6AJLkb8yciCcmk44lbZfbDhVV8S+80++Tz8pAIBVSYuKHQe74FubEMh1OphKyV7EaqmISS6sxPf9wy/svQi7Z/f+EU59SjiVtl9MOFWHUnv/9/d9+KjN3gAAWKhBGiSM5N20mFxndb1iahCw4flxSnKB5RirlhJOtT0T4VTa/mbh1LMUSmlyDgCwBmlxsYjFL52u1M+rqmqx2eqlRO/jTp7c8tTJ7a6V+GA5vv8fvXX+ulJVl9OFasZXV7490SdzvpRefult8/Cml+vG77fafvZOGp9nw/Oa9PB5r8W8z7PNYz5ps5Px7Vvd71c2elZV+d7/9X2/oXcgAMCa5WXx/KLnbCDvVMNRJ6v2u1wxFbH3xpFQCpbqvFrq8vQqlVPtz0TlVNp+vsqp80opoRQAQGdsxGp1C9bZSrFOBlN5WdQ9YG534FRW6TRoSSGs0ssV0IRTs7YXTrU5iZbh1Hko9X/+xQ+FUgAAHZEqh06C3Y/tvCw62c+6qxVTEaulDqrhyAcXWJIf+Edf2M+z/JWedcKpWdsLp9qcRMN1EEoBAHRXxKqpg7TIXKd0LpjKy+Ig4FzPk67O9YQeeTGNr2HVNOFU+zMRTqXtJ38/hVKm7wEAdFE1HNUL0hwHuzlbXZyp1algKiV3nSwtW7KISS2szA/8oy/sZll26+J4wqnJxxBOfeqG4ZRQCgBgMxykRcgiuZfaJ3VG1yqmjlKCF8lxSmqB5bkS/gqnJh9DOPWpa4ZTQikAgA2R2ulELI7p1HPuTDCVl0Vd0XCvA6eySmeqpWAl7k46iHBq8jGEU5+aM5w6ey0XSgEAbJJqODpKi5FFcjsvi/2uPN8uVUxFXJFuoOE5LFfd9HxWJaZwavIxhFOfahlO1QMNe4/+glAKAGADdSakWaFBVxqhdyKYysuirma43YFTWaXTlMwCS5TnzX9khFOTjyGc+lSLcKoOpUzLBgDYQNVw9KRelCzYvdvuygyutQdTKaGLGNBETGRhpb74K1/YOS9TbZHqCKcmH0M49akZ4dR9oRQAwMaL+Bn9IC+LnXWfRBcqpg5SUhfJSUpkgeV6+cdFODXH91ttL5xKOzl89Bd+42HDqQAA0HHVcPQ8y7LDYPdpqwuFQmsNplIyF7H5t2opWI1XfteEU3N8v9X24cOp40f3fyPiKi4AAH11lHqHRnInL4u9dT7fdVdMDWY1Je6pBymJBZboi7/yhd1J1ZjCqTm+32r7sOHUM6uqAgD0S1qcLOJ7vLVWTa0tmEqJ3L11HX9NzlIYByzf1MpE4dQc32+1fbhwqn4tv/vovhX4AAD6phqO6jYNz4Ld2Ft5WaxtZtc6K6YiBjQHKYEFlqxpNT7h1Bzfb7V9qHDq7q/e/w2VrwAA/RWyaiotTrdyawmmUhJ3ex3HXqNnKXkFluwv/eMv3K2nCd80kMmEU1OPETicOvzV+79h8QoAgB5Li5U9DnaPt9YVyK08mEoJ3Nq7vq+BXiSwOncvjiScmv6Yub/favteh1Mnv6rZOQBAFAcBG6G/nxapW6l1VEwdBGx4/jglrsAK5GPBVCacmvmYub/favtehlNnef7qzxUAAP2VFi2LWFSz8pleKw2mUvL2/iqP2RGqpWBFyotpfJcOJ5ya/pi5v99q+96FU/v/eF+zcwCAYOpg6jTYc76dFqtbmVVXTEVMGw9T0gqsxqfT+C4dTjg1/TFzf7/V9r0Jpx784/3feNSwKwAAeiYtXhaxlcNKq6ZWFkylxO3Oqo7XEadBwzhYn0vTrYRT7R8z9/dbbb/x4dRpHvPNCAAAL8KpOqQ5CXYttvOyWNnMr1VWTEUMaAYpYQVWoPzVL+yd97BrCjOEU1MfM/f3W22/0eHU/q+YwgcAEF3EgcpBWrxu6VYSTKWk7dYqjtUhJylZBVbn02op4VTbQwinpmxfT+H7lf3fsHAFAEBwaTGz42BXYWtVBUZLD6ZSwhYyXezAOUA0r66aJpxqewjh1NXtT72OAwAwpi64OQt2Qe7lZbG77IOsomJqkJK2SI5TogqsSPmrX6hX/dy+cjThVNtDCKde3d4UPgAAXkpteiK2KFr6c15qMJWXRf1B8d1lHqODzoyyw1rcnXpQ4VTbQwinXnj8/7N3f01y7Od92LtZvLB0syyXL1O1UPm6C/ALYC34CgDe5Y+dBXPX5aQwegUYXLjsVMXiwJE1shOLWEuOLaliApH/UDIlYiVStmVJB8hEip2ydLCx/jDlo8OzJHVweEiiUw38gLNY7MzO7M70/Lqfz6eKJeFgt/vX3YvZmW8/z9Na+AAAOK2Zzsapsj6SvbKu5n/WWoNNV0xFnLE0aaazpxmsA6JZ/GIpnFp2F9HDqfbmwq1z9g4AQFydPa0uIxutmtpYMJUStb1NbT9TRylBBTr01//pZz/zqWVeb4RTy+4icjg1/sV9LXwAAJytmc4etA87C3Z6dsu62ljWscmKqYi9lxGTU8jB9WLZFzTh1LK7iBhOHf3i/jci/u4CAGA1ET/7j9K4prXbSDCVkrS3hxAP22FKToHuvW7jE04tWJNwau460h+18AEAcK5mOntcFMW9YGdqZ1PztNceTJV19Zmo6WEGa4Corp88buHUgjUJp+at4/AX9w08BwBgaeM0nzSS/bKurq/7eDdRMTVJSVok91JiCnTsr//Tz145q0JTOLVgTcKps9ahWgoAgKU109kHQZ/Iv/ZjXmswVdbVtTZBW+c2e+A46A8j5GJuYi+cWrAm4dTJdRz8wv43PE0VAICVNNNZW5hzFOys7ZV1tdabuuuumIo4NHacklJgG8r5wVQhnFq8JuHUK24uAABwUREr78dpjNNarC2YSonZ+Y9rH5ajlJAC23PzvERFOLVgTcKpg5//b1VLAQBwMc101s4pfRjs9O2uc872WoKplJRFvONsJgls0V//8mevvZ5pJ5x6TTh19rfPCadUSwEAcFkRH4Z2p6yrK+vY0LoqpkZnDR8euMOUjAJbUhbFtTf2LJx6TTh19ref+qNqKQAALq2Zztr3lHcDnsm1dJBdOphKCVnEdFC1FGzf9VVDG+HUgjXFC6dUSwEAsC6T9HC0SG6UdbVw5u8y1lExNXndShPH3ZSIAtv14kVQODWfcOrsby+L4uCfqJYCAGBN0kPRIhbtXLpqqmya0x+EVvjml8nY1y67iJ5pE9ArnsQH2/Xff/mzbbXmuycX8dar2Tkvb8+XOYJm4R+L815Cl3mJbU5ttWlOpyzNgj+df5yt5yu+1J9e9zLfftlzsdy5XbyRc4/zk7//sX8smIK1SA/AUUkO+XncTGcRPyTDVpV19bgoiqvBrsIXmuns/kW/+dOX3HnEJ9KNhFKQhWunF1Geji3e+g9v+tQy4dSpbZzeZFvdsyhwOe/vi1Q5dTKcaiun3gyn3tzrqsdZpIqiVcKp0+teYheXPhfLndvFKzn3OF9++6FQCtajrKv2Tei+0wkAr40CFvBMyrp6cNGs5MKtfOnuWLQU8MllUkBgrc7sZdbWN5+2vtffbrYUXFL7ROZ0R1goBQAnpIekHQQ7JzuXmd96oWCqfTMStVoqgzUAL71VMfWKcGo+4VRx9I//2jc8URUuoayr9vX3acAblACwrHHAQei308PxVnbRiqlRwIHnD1PyCWSgLIu9RasQTs0XPJxSLQWXkCrm3wn4PhAAlpYelhaxmOdCHWYrB1MpAbtzkZ312LFqKcjH//Dgsy+qpVYNN4RTnwgaTrWv5Q8W7xWYJ82T+pITBABLaYOpo2Cnai89JG8lF6mYijhjaZISTyAPr9v4hFNnr0E49YkTx/ngH/+1b3h4BazIPCkAWF0aBB6xWn/lzGilYColXwvbZwboKGgJHuTsjflSwqmz1yCc+kQ6Tg+vgBWl937mSQHABaSHpx0GO3e7ZV2tFMitWjEV8U39+KKPPAQ25q3B58Kps9cgnHrN0HNYUVlXrx53bZ4UAFxcxLFAo/TQvKUsHUylNye7G1t2ng5Twgnk5czKTeHU2WsQTr2g8hWWlFr32vc/X3TOAOBymumsbYc/CHYad1Z5/73c566XSVfE3khPb4LMvBp8Po9w6uw1CKcMPYdlpIfcPDJPCgDWapQexBPJfllXCz+7vbJsxdQkYBn3QTOdafuAzJRlceW8FQmnzl5D4HDqyT/6q9/wAAs4R5on9dg8KQBYrzQeKGIF/1LHfO7nrZRwRbtrdhy0DxT64NpSIY5w6sw1BA2ntGTDOcyTAoDNaqazcXq4WiR7ZV3dPO94l/msFTLVM/AcsvWiHFQ4dfJ7hFPzv/7Ff9TGB3OYJwUAnYpYADM5bxD6ws9ZKdk6c8jwgB2lJBPI0+tWPuHUye8RTs35em18MId5UgDQrWY6a2+YHgY77bvnBXLnfcaKWC2lhQ8yVp6afSKcOvk9wqkzvl4bH5zBPCkIYamhw0DnbgU85aN0Q+xMcz9flXU1TslWJIcpwQQydPvhyyfyrRryLPM1wqn5eh5OeU2HU8yTgjD8G4cMNdNZW81/L9i1aV+P5namnfnZKvX/Rawc0sIHefukje/UMoVTJ79HOJW+/ugf/dWva+ODxDwpAMjGOD10LZL9VLH9lnmfqyYBE/a2WupRBusA5infLEkXTp3cpnDqjH2oloLEPCkAyEd62FrE0UlnFgO99ZkqvXGJ+KZFtRTk78plQ55lvkY4NV/Pwik3G8A8KQDIVcRgau+sqqmzPk9FbOF7oloKeuFlK59wasEuhFMn9uF1nfDMkwKAPKWqqYOAl+etoqA3Pkul2VIRJ8RHTCqhjz5p5RNOLdiFcKptz/65/+brHyyxGxgk86QAoBeiVk298YS+05+jbga8o3bcTGceJw798Obrk3BqwS7Ch1OqpQjLPCkA6IdmOmtb7Z8EvFxvVE2d/gwVsY3PcFzogdv/x2evnblK4dSCXYQOpwRThGSeFHBCxA+70EcRC2VunvzD689P6e5axDcxginoh8/MXaVwasEuwoZTj1dbFfSfeVLAKVraoR8iZhI7ZV29HiN18rNTxNlSbRufYAp64FNlcXbF1CvCqQW7CBdOPflZ86UIxDwpAOivZjp7GrTC8XXV1KfO+o+BCKWgPz5zbvghnFqwi1DhlGopwijr6pp5UgDQexHb+W68+n9efGYK3MZnBgn0x4snNwin5ny7cOrk33ttJ4Syrm6m9zLmSQFAv4V8/5rey7z+vHR9u8vZGh9eoD9eP1JUODXn24VTr6iYYvDKumqfZvNl86QAoP/S0/mOA17KF1nUp0/+IZjj1MsJ9FAbfjw/namc1AYXJ/7+1B9fBBvNou9f4mtOb/Pt//CmNpx6ft6pvuS6lzquoiyaE1ttw6mmKd/4ipN7XfU4i2WuzznrXmIXc4/1H/7XXxdMMVjtPKlU7n/DVQaAQWnfw+4Fu6QvsqhXN/EXDxUeJh9coF/eepFWOTXn22NXTnk0NoN1Yp6UUAoAhidiR9eLcQSfOvmHYLTxwQAIp+Z8e9xwyk0HBsk8KQAYvJDvY8u6uv6pdPctIm180BM//kuf/cyilQqn5nx7zHDKazuDY54UAITwQdDLfKX9bLTwA9+A+fACvVGeG6ALp+Z8e7xwSsUUg9HOkyrr6kFRFHdcVQAYtmY6i9rV9SKYivpEPsEU9Mr50YRwas63xwqnvLYzCOZJAQBBXFvqM9EQeSIf9JFwat4mhVMvHfxXnshH/5knBQBhRXyQz2faz0NXMlgIwCInKjuFU/M2KZwqjlfbMuTHPCkACC3knKlPC6aA3LXBRPNGPtJGE6cDkze14cfzRV9yahOnt/j2Ps/YxDlf89Yqz1l2G049X7zLS6+GFBRsAAAgAElEQVR7qeMqyqI5sdU2nGqa8o2vOLnXVY+zWOb6nLPuObtQLUVvtfOkiqK4r3UPAAgmbCvfYQZrAFbwdrWPyql5mwxcORX1SSb0nHlSAEBgO2FnTAH9I5yavw3h1Asqpugd86QAgOgEU0AfvJ4xJZyavw3hFPSLeVLAhnnYE9ALn3aZgNydP0fJzKmLrntgM6dUTNEL5kkBHRFMAb2gYgrohfOrgVROzdtkoMopM6bInnlSAABvEkwBvSGcWn6jUcMpyJl5UgAAbxNMAb0inFp+owHDKa18ZKusq4l5UgAAbzNjCugdM6c2t+4+z5z60n/5da18ZCfNk3pQFMWeqwMA8DYVU0AfXDu9RpVTy280SuUU5CbNk3oslAIAmE8wBfTBma0vwqnlNyqcgm6VdXUrzZPadeoBAOYTTAG9JpxafqPCKehGmif1JfOkgC3T4g70ghlTQPZWndVk5tT61t3XmVOwDeZJAZnxUBCgF1RMAb2wasWRyqn52xho5dTh+VuAzTFPCgDgYgRTQG8Ip84mnILtMk8KAODiBFNArwinziacgu0wTwoA4HLMmAJ6x8ypOWs2cwo6Y54UAMB6qJgCeknl1NlUTsHmmScFALA+gimgt4RTZxNOweaYJwX0RTOdPXKxgD4QTAG9Jpw6m3AK1s88KQCA9TNjCug9M6fmrDnYzCnYFPOkAAA2R8UUMAgqp84WqXIKNsE8KQCAzRJMAYMhnDqbcAouxjwpAIDNE0wBgyKcOptwClZjnhTQc4cuINAXZkwBg2Pm1Jw1B5o5BRdlnhQAQLdUTAHZu8hga5VTZ1M5BfOZJwUA0D3BFNALwqmldyGcggtI86TeMU8KAKBbgimgN4RTS+9COAUrKOvqfponBTAUT11JoC+izpj6TAZrAC7g3NlOZzBzas6azZwiuDRPqn3q3tXo5wIYHMEU0BtRK6a8AYUeUzm19C5UTsG8n7mX86Seek8AALBVTz6VhnwC9IpwauldxAmnYEkn5kntOGcAAFv1Qft55APXAOgj4dTSuxBOwaufGfOkgBgUH0A/XYl43cIGU6mEH+g54dTSuxBOEVo7T6qsq/aD2n70cwGEoPgA+ini04EfR27lMwAd+uK8QEU4tewuhFOEZJ4UAJC79FCWiF608kV9YoOKKegT4dT8TQinYP7PkXlSQEwqpqB/omYUjz/VTGdRg6mQvZvQa8Kp+ZsQTsHbPz/mSQFBNdOZGVPQP1EzisefTv/PYVEUe1teTNdUTEEftTnE6WzihDYEer7g78/SBiTNgu85vcu3v/6cRS2zrlObOH+fZ2xixeM491wWRfF88S4vve6ljqsoi+bEVttwqmnKN77ivPNPLKkU/pHWPQCgRyJmFMdtsdSrm+KPtryYbYgWxEFvrVzto3Jq2V2onGJwzJMCKI6dAuil6wEv24vqzk+d/EM0nswH/SGcmrfPMzYRNpwiOvOkAF7Qxgf9FPGm2oPi1eeNZjp7sPXlbEfERBJ6Szg1b59nbEI4RTDmSQEAfVXW1c2gF+9F997JzxoPt7eWrRFMQc8Ip+bt84xNCKcIoJ0nVdZVWx2w73oDvOCJfNA/EbOJo1cPajj5OSNi1dSNNCAV6BHh1Lx9nrEJ4RQDZp4UwJm08kH/RKyYej3rPHowVQT9AYBeOSuoEE7N2+cZmwgSThGLeVIAwBCkG227AS/m5NX/8/rzRTOdfRC0nU8wBT0gnFpln2dsQjjFgJgnBbCQiinol1sBr9frNr7ijM8W97tfz9a17XxXAh439I5wapV9nrEJ4RQ91/6+Nk8K4FxmTEG/RCyWmZz8wxufK9LT+Y46X9L2RUwooZeEU6vs84xNCKfoqbKurqcqAPOkABYTTEFPpKfxRWvjOz5dFHXWZ4pxd+vJhmAKekQ4tco+z9jEQMMphqusq1FRFF8zTwrgfCfbY4Dste9xonmQRkm99tbniWY6ux+wamo3DVEFekI4tco+z9iEcIoeaJ+cm+ZJfdH1AgCGJFWD7wW8qG8VQ837LBGxairiMUOvCadW2ecZmxBOkbE0//GReVIAKzl0uqA3IhbHHDTT2dPT//HMzxGqpoC+EE6tss8zNiGcIkPmSQEAQ5be60S7+XY8r3Vx0WeIiCGNqinI0Ln5jHBqhX2esQnhFBkxTwrgUsyXgn6ImD1MTs+WemXu54dmOnsUsBS0rZoSTkGGhFPL70Q4RR+ZJwWwFp7IB5lLT+KLNlvqqJnO5mYt5312iFg1NWrfHGewDuAU4dTyOxFO0SfmSQGsjYopyN8k4DVa+PTBhZ8b0lCqe2tfUt52gv6gQC8Ip5bfiXCKPjBPCmCtVExBxlKH1m6wa3TYTGcPFn3BMp8ZxmlIVST76Y0ykINzgovThFOr7POMTQin6Ih5UgDrlcaxABlKnVkLK4cG6txOvHM/L6ThVBHnLpk1BTkRTr0mnKLvzJMC2IhoxQTQN5OAN+PupU68hZb6rNBMZ+0JfLLR5eZnr6yriDO2IF/CqdeEU/SVeVIAG2O+FGQqdWRFe+9zvGzBz1KfE5KIJWdjg9AhM8Kp14RT9I15UgAbdW5VArA1IbvQUgfeuZYOplK/8sONLTlPu0EDOcibcOo14RR9YZ4UwMYJpiBDqRNrL9i1OUqdd0tZpWKqCBrSjFLbAZAT4dRrwilyZp4UQGe08kFmUgdWxGqplcYirRRMpaFVd1deUr/tpCFlQG6EU68Jp8iReVIAnVIxBfkZpU6sSB6u+oTQVSumihTSRHviw400FwPIjXDqNeEUOTFPCqBbzXSmYgoykm7Qhew6W/UbVg6m0vCqiCdX1RRsyWUDl7e+XDi1wj7P2IRwinOYJwXQuUOnHLIzCfhe6G7qtFvJRSqm2nDqfsAXv6tpaBmwBcKpJRcVOJxi+9I8qQfmSQF0ThsfZCRVjt8Idk2OL1rQc6FgKok4wGuShpcBWyCcWnJRwim2oKyra2meVLQ3YQA50MYHeYnYcTVKHXYru3AwlYZZHaztEPphJ2gbI2RDOLXkooRTdKisq5splDJPCmA7BFOQidRpFe090ZPUWXchl6mYKlLVVLRB6HfSEDNgS4RTSy5KOEUHyrpq3wt82TwpgO1Z9QlYwGakDquQ1VKX+eZLBVNpqFXEk37hJBBYD+HUkosKFE7RrRPzpO449QBb9cTph2yMA96sO7hsOP7py66gmc7GqVRt97Lb6pG9dpiZOxOwXW3g8rxZsIQ2uGjm/vHtLy+Lojn1BW99zzkbOXdNS+530S7f/vrzjuzy5+q8NS7zNSufy6Ioni/e5TKHzua8uiPoqbWwHveDvZ9mfbTxQQZSZ9XtYNfieB3zxy8dTCWjVMYfSfvmQUsfbJlwaslFCadYs1Q17SlQsAbp6U1CKS7KzXLIQ8TOqkl6T3gpl50x9UIznbWl/Ifr2FaP7JZ1ZRA6ZEBb35KL0tYHkKuIT7tmfQRTsGXpBsNesOtwtK7K+bUEU0nEkGachpsBG7X5wOWtLxdOrbDPMzaxjXAKoIeCfphhfY7XUa0AXFrEaqlxM519sI4Nre29fjOdtb3NB+vaXk/suMMFXRFOzdulcAqg17yX5DJUS8GWpU6qaO3Yh810trYwbt3v80dp+FUkt8u6uhbsmGFLhFPzdimcAugf1VKsgWAKtih1UEW8wbDWjrm1vsdPZVwRL4onEkFnhFPzdimcAugd1VJclmAKtmuSOqkiOUgdc2uz9vf3zXQ2SUOwItkr6+qmFwToinBq3i6FUwD9oFqKNThe94dDYHmpc2o/2Ck73sR88U29t7+1oe3mTNUUdEo4NW+XwimAXvDekctSLQXbFfF1fLKugecnbeR9fTOdtS+Sh5vYdsZ2y7pSjg2dEk7N26VwCiBfZV21N3GvukRc0gMnELYjdUxFq3o9aqazjWQem3xPH7FqalTW1ZUM1gGBCKfm7VI4BZCfNChXtRTroGIKtifi6/jaW/he2dj7+WY6e1oUxd1NbT9TO4ZYwvqdH+IIp+btUjgFkJ1RwEG5rN9R+rwFdCx1Su0GO++HzXS2sSrNTb+Xn6ThWJHsp2GWwBoJpxbvd9Euo4RTALlLlfV3XCjWQBsfbEF6Hd9Y5VDGNtoRt9FgKg3FinjRVE3BBginFu930S6FUwBZuO8ysCba+GA7xgGrXu9tukJz490PzXTW/gJ+sun9ZGYvDbUE1kw4tXi/i3YpnALYnqCDctmQTbbUAGdLnVH7wU7PcReFN12N5QhZNZWGWwJrJpxavN9FuxROAXQvvSdULcW6PHQmYSsidkaNUyfcRnUSTDXT2aOAL6C7QQM56IRwavF+F+1SOAXQuYitH2yONj7oWOqIilb1+qSZzjp5+mCXDzIaBRyEficNRwM2QDi1eL+LdimcAuhGav247XSzRtr4oEOp6jVitVRnhTadBVNpWFYnaVtmIh4zdEY4tXi/i3YpnALYLC18bMCTTQ8hBt4ySh1RkTxMnW+d6LJiqkghzVGwC3oj3SkDNkQ4tXi/i3YpnALYqEnADzNslmop6FDqgLoT8Jx3Opao02AqDc2KWAKnago2TDi1eL+LdjmYcAogI+kpfNGe3sTmCaagWxE/y9/tujKz64qpNpxqy5kPu97vll1Nw9KADRJOLd7vol0KpwDWRwsfG3LUTGePnVzoRup8uhHsdB9vI4zrPJhKQlZNpTcpwAYJpxbvd9EuhVMAa/PAU/jYANVS0K2I1VKj1OnWqa0EU2mI1sE29r1FO0EDObi0ZcKLk4RTi/e7aJfCKYDLKetqHPCR4nRDFR50pKyrdsbS1WDn+zB1uHVuWxVTRRqmdbzF/W/D7TQ8DViRcGrJNS2530W77Gs4BbBtqe0j4pBcNk8bH3QkdTpFLCrZ2jFvLZhK5WERS+Pc6YALEk4tuaYl97tol8IpgNWkm49ardgUP1vQnXHAduyD1Nm2FdusmGrDqfaCH21zDVuwl+6mARcgnFpyTUvud9EuhVMAKzFXik1ycxs6kG4y3A52ro+3XSG21WAqGWWwhq75xQKXIJxack1L7nfRLoVTAOcr6+p+wFkkdOeJNj7oTMTP6pNmOnu6zQVsPZhqprP27tLhttfRsd00GBO4IOHUkmtacr+LdimcApgvDcjdd4rYIDe1oQOpsynawyuOchixlEPFVOtWBmvo2igNVQMuSDi15JqW3O+iXQqnAN5W1tXNoii+6NSwYeZLQTcihsCjNP97q7IIplLZ2L0MltKlnaDD32GthFNLrmnJ/S7apXAK4BNlXV1TyUIHHm67xQYiSB1Nu8Eu9mHqYNu6XCqmijRs6ziDdXRpP72pAS5BOLXkmpbc76JdCqcAXg/HfWTYOR1QLQUbljqZIs6+zuaYswmmUvlYxLlLqqbgHJsIJoRTi/e7aJe5hlMAXUgfYDyBjy4cC6agE5OAr+kHOT1UIaeKqTacmqThW5HspfkEwALCqeU3IpwC2IwUSj3yBD468iCH2S8wZKmDKdoDLI5zqxDLKphKIg5CnxiEDucTTi2/EeEUwEY8EErRIZ0VsHkR/51Ncgu9swummumsvQv1MIOldGk3aE8rrEw4tfxGhFMA61PW1f2AjxFne57k1GYDQ5Q6l6K9rh8101l2I5RyrJgqog4eS4M0gVO6GIYtnFq830W7FE4BQ5dCqWitHmyXainYoNSxFPHfWZYdalkGU+mRqHczWEqXdoIOf4elCKcWfI9wCmBjhFJsgaHnsHmj1LkUyWHqUMtOrhVTRUovjzNYR5f2y7q6HudwYTXCqQXfI5wCWDuhFFti6DlsUOpUitille0872yDqfRiHPGHRdUULCCcWvA9wimAtWhbPIRSbJE2PtiscepYiuRe6kzLUs4VU2041b4heJLBUrq0V9ZVxCcTwnxrCCaEU0uuacn9LtqlcAroszR35JFQii05NPQcNid1KEV7fT/OvQAm62AqiVg1NUlvioBXhFMv/144tcIWAVZzIpS66tSxJfedeNioiB1Ko9zbg7MPptJwroMMltKlnaCBHCwmnHr598KpFbYIsJyyrq4Jpdiyo9QxAmxA6kzaC3Zun/ThdaUPFVNFSjWjDUK/k4ayAScJp17+vXBqhS0CnPOyIpQiD0Ip2JBUERtxflsvCl56EUylIV0Rf4gMPoSzCKde/r1waoUtAsx5OXl5B/2dgINwycux9/6wUaOAr/MPUwda9vpSMVWkF+qjDNbRpRtpOBtwmnDq5d8LpwAurKyrtir/S84gGXiQ+wwY6KvUiXQn4AXszXig3gRT6YU65CD0DNYAeRJOvfx74RTAStqWjrKuHgT9oEKeIg5khq5E/Ex9N3We9UKfKqbacKp9A3GYwVK6dLWsK4PQYR7h1Mu/F04BLOXEPKkbzhiZOOjTB0jok9SBFO31/qhvYVyvgqkkYkgzTsPaIKRVcyDh1ILvEU4BgaV5UoackxsdErA5ER8qMO5ba3DvgqlmOnvc3lXIYCld2lHeS3TCqeW2GDqcApj3GvSyde9+midlyDk5OUyfb4A1S51Hu8HOa/ua0rswro8VU0WqmjrOYB1dup2GtkFYwqnltiicAjjxyvJJ696+00KG3HyGDUgdRxH/ffXymHsZTKWytIglrxHLEOENwqnltiicAnh9t/wdrXtk6rAvj3KHHhoHrJA96OtrSl8rptpwapyGekWyV9bVzWDHDG8RTi23ReEUEFVbZV7WVfvm/It+CMiYainYgNRpdDvYuT3u82tKb4Op5FYWq+iW4YiEs1TAcs4XCKcWfI9wChiQVCXVzuzZc13JmGop2JyInUaTPj/ds9fBVHoxP8xgKV3aLevK3RXCEU7N34RwCuCtKikDzsmd9/OwAanDKNqNiaPUUdZbfa+YKoJWTY3SMDcIRTg1fxPCKSCydNPuXVVS9IRqKdiciB1GowzWcCm9D6ZSudq9DJbSpR0tfUQlnJq/CeEUEE1ZV9fLumrfC95x8ekR1VKwAekmxW6wc9sG3Q8yWMelDKFiqkgv7scZrKNL++nxxxCOcGr+JiKHU0AcJ9r2vhbwQwj9ploKNiB1FPW+cugCBnHMgwimmunsg6B3HlRNEZZwav4mhFPAULUfPMq6mmjbo8dUS8FmTALOFzxoprPHGazj0oZSMdWGU+0P4pMMltKlvbKuIs7YgheEU/M3IZwChiQFUu0H+qcBHwHOcDxULQXrlzqJ9oOd2uMhVYgNJphKIpbujQ1CJzLh1PxNCKeAvjsVSN3xtD16LuJnFehCxE6iceocG4RBBVPpDsTDDJbSpV2/5Bi6tQQs53yBcGrB9wingI4JpBigg/TQJmCNUgdRtNbuo9QxNhhDq5gqog48a4eAZrAO2Bjh1ArbEE4BPSWQYqAG1XIDuUidQxHntg1unM/ggql0J+JuBkvp0o5BikQgnFphG8IpoEfSU/buC6QYqMmQWm4gI6OAT2Yd5JM9h1gxVaQe06MM1tGl/bKursc5XKISTq2wDeEUkLmyrm6WdfUoPWVvXyDFAB15kjasX+oYiliJOMiHn306gzWsXXtHIpWBf2lgh3ae9pfetbyXCJfXxhDNgq20wUVz6gvO+57TX3D668/a5jL7XaQNcZ6vsqgznLuNc45rmWN463vO2cj5x7Xcfhft8u2vF05BX6QPE7fS/6Ld6SaeQQ0ohoxMAt7MuDvUWXVDrZhqw6m2HPwwg6V06Woa/gaDp3JqhW2EqZwCcpVmR90q6+pBqo66I5QigMP0mQRYo9QpdCPYOT0ecvXlYIOpJOLcpUkaAgeDJ5xaYRvCKWALUqveq9lRXwr4QYLYzICFzYjYHjsacvXlIFv5XmmHgpV1dZBmFkSxk3pt/SIkBG19K2wjTFsfsC3p5tjNoiiup/9rZhRRHQxxQDFsW+oQuhrsQjwZevXloIOpZBzwjdGd9u7kUPtP4TTh1ArbGHA4BWxHWVfXTgRRey4DvGi5iTiUGTYq3fwIWS2VwRo2avDBVBvOlHU1SbMMIrmf3iRCCMKpFbYx0HAK6MaJIOrV/1RFwZsMPIfNGAX8nfMwQvVlhIqpNpwap5K/SEM299qhcEqIiUQ4tcI2hFPAMv8GX96dPhlEXRNEwUJty03Eig7YqPRE12jFJmGqL0MEU0l7Qb+cxUq601ZNXYlysFAIp1bbhnAKePXv6JMA6kr6nxAKLsYTsmEzIj7hchJlPE+YYKqZzh6UdXUYbPbBbllXI3dt6LtVQx3h1ArbGFA4Bcz59/FJ6NQ6+f+/avk3FwrW414znT12LmG92k6ggL+rjiLN04pUMVWkqql3MlhHl8ZpELo+d3pNOLXkoi6yjZ6HUx993BQ//7sf/hc/8c8rrcvwkkon6N6Rp2LDxkSslgo1qy5UMNXewSjr6qAoiv0MltOVnfRL0pNB6D3h1JKLusg2ehpOffOD58WXf+c77z376PlfLoriL6+2NQBYm5EbwbB+bQdQsFnRrcNmOgsVxn0qgzV0bZSGiEVyOz1BB3qvXLFn67wvP2t75+6iXPjHpda46nF8atVFXWQb5xzXW1++zLk7ZyPnH9f8/f7en/zgw3/ym8fPnn30/C+tvhUAWJv2qVkPnE5Yr9SKHrESMdwxhwum0p2MiD/c5kwxGMKpJRd1kW30JJz6yu9/7/iX3/nOjz5vih9Z/bsBYG2ODTyHjRkHbE0/iPhk/YgVU0UaBn6UwVK6tFfW1c04h8uQnJVbCKeWXNRFtpFxONXOk7r/m9997/ff/dD8HABycEsLH6xf6vi5HezUHkcdwRMymEoi3tlQNUVvCac+ETWc+v8+eF78zK9/+70/e//7WvcAyIEWPticiJ9dJ1GD7rDBVCqPO8xgKV3aLevK00LoLeHUJ6KFU7/3xz/48H8zTwqAfGjhgw1JnT57wc7vUTOdhf2sHrliqgj6y2SUhshBLwmnPhElnPrK733v+CvtPKnn5kkBkA0tfLA5EaulQj9FP3Qw1UxnT4uiuJfBUrq0o6WP3lkiHBFOLbmoi2xjS+HUq3lSv2eeFAB5OdDCB5uROnx2g53ew+ivKdErpoo06f84g3V0ab+sq+txDpdBEE7NNcRw6psfPC/+/q8dH5snBUBmjqJXNsCmpM6eiP++wrcFhw+mUgluxB9+s6boH+HUXEMKp/7d0x88+0dfP/7w+z9oVEoBkBstfLA5k9ThE8m91MkVWvhgqngZTt0viuJJBkvp0l5ZV+GTWXpIODXXEMKpX/zdj957NPvOjzxvih89Z9MA0LW76QFKwJqljp79YOf1WMHIS4KpT4SsmjIInV4STs3V13Dqo+83xd979J33nv7xM617AOToSeQnZkEHIv77GqvAfEkwlaS7Hw+zWEx3dvXI01vCqbn6Fk5981vPi5/+6vHxt7/zA6EUADlqqxpuujKwGamTZy/Y6T1qpjMPJUsEU28aBRyEPirr6koG64DVCafm6ks49e/eNU8KgOzdMgMGNiN18ESsljJW5wTB1AnpF0601HIn4DEzJMKpuXIPp37hd8yTAiB7B9Ef4w4bNkqdPJE8NK/uTYKpt03SY2AjuZGGzUGWLhv6FMKp5Rd1kW2sGE6186R++mvmSQGQvXaulKoG2JDUuXMn4Pk1TucUwdQpafhYxFJCVVNkTTi12teclFM49affel5M/5V5UgBkz1wp2LyIn0Hvag1+m2DqDM10dr8oisPsFrZZV9PQOciWcGq1rzkph3Dqt979wbOf+w3zpADoBXOlYINSx86NYOf4WEHI2QRT84WsmkrD5yBbwqnVvuakbYZTP/87H733tf/TPCkAeuGeuVKwcREDmlHq0OIUwdQcaRjZQZaL25ydoIEcmTsdwAinVvuak7oOp5593BTTX/vOe0//yDwpAHrhsJnOzH+BDUqdOleDneMnqTOLMwimFhulcrtIbqchdJAV4dRq+12kq3CqnSf1U+ZJAdAfR+ZKwWalDp2Q1VIZrCFbgqkFUpldxH80klyyJJxabb+LbDqc+q0//MGznzVPCoD+eDHsXJsNbNw4depEcpA6sphDMHWOZjobp7snkeylYXSQHeHUavtdZFPh1C/89kfv/Zp5UgD0Szv75bFrBpuTOnNuBzvFx8blnE8wtZyIZXeqpsiWcGq1/S6yznDqo4+b4qd+9Tvv/aF5UgD0y12zX6ATEf+dTTzh83yCqSWkp3IcZr/Q9dot60ofLNkSTq2230XWEU5981vPi7/7K+ZJAdA7B6lDAtig1JGzF+wcHwUdDbQywdTyIoY04zScDrIknFptv4tcJpz6N3/wg2f/8NfNkwKgd54YSAydiVgtNTa3bjmCqSWlnvN7vVjs+uxIeMmdcGq1/S5ykXDq/r/+8H3zpADooXbuy3UfGmHzUifObrBTfahFeHmCqdWM0y+xSPbLuroW7JjpGeHUavtdZNlw6tnHRTH5yrff/5Nvfu8vrrYHANg6oRR0JHXgRGyX1SK8AsHUCtIvr4g/YKqmyJ5warX9LnJeOPWn33pe3PuX3/row2c/FEoB0Ec3PYEPOjNJnTiRtLPrHvkRW55gakXNdDZJQ8wi2Svr6mawY6aHhFOr7XeReeHUv/3D7z/70qPj4vnz4i+stkUAyMIXfGCEbqTOm/1gp/vY7LrVCaYu5lYfF31JqqboBeHUavtd5HQ41c6T+tUn3/mR1bYCANm4a+YLdCriZ8iJNuHVCaYuIN1ledi7hV/ObllX+mTpBeHUavtdpA2nPvq4KSZfOX7/T775kdY9APqqba3xXhY6kjpu9oKd7yOvMxcjmLq4iOV5o7KurmSwDoJZNUwphFMr73eeP/nWD4uJeVIA9FsbSkXseIBtilgtpYXvggRTF9RMZ0/bcuBeLv7idjxdgG0RTs3/gk2FU//mD77/7Ge+Zp4UAL32RCgF3UqdNrvBTvthM509yGAdvSSYupxJGm4WyX5ZV9eDHTOZEE7N/4J1hzaR/TMAACAASURBVFM/85sfvv9V86QA6LcnRVF43wodSh02IbuLMlhDbwmmLiENNYv4A6hqiq0RTs3/gnWEU88+boqf+JfmSQHQey9CKUOIoXPj1GkTSdsu/NiP2sUJpi4pPdnjSa8PYnV7ZV0piWZrhFPzv+Ay4VQ7T+qL/8I8KQB6TygFW5A6a/aDnftj1VKXJ5haj5BVU2VdfSaDdRCUcGr+F1wknPqtPzRPCoBBEErB9kTsrBl7vbk8wdQaNNPZo7Z8r/cHsppdyTDbJpya/wWrhFM/840P3/+Vx+ZJAdB7R0Ip2I7UUbMX7PQfNdNZxKcPrp1gan3GAQeh30nD7WBrhFPzv+C8cOqjj5vib/+L4/f/2DwpAPqvfR9+UygF3UudNBEDGuNt1kQwtSbNdPY06D9GCTEbV54TyQin5n/BvHDqT97/YfG3/7l5UgAMwnGqlDJ8GLZjFHDg+WHqnGINBFPrNUklxJHcSEPuYKOEU8t/z3nr/Ld/8P1n/8A8KQCGoZ0pdU0oBduROmjuBDz9qqXWSDC1Rql0OOLAN1VTdEI4tfz3zFuneVIADMirQedPXVTYmoifBe963VkvwdSaNdPZ/basb1AHdb6rZV0ZhE4nhFPLf8/JL/iz7zwv/qd/fvz+H/2peVIADIKn78GWpc6ZG8Guw7HCjPUTTG1GxJBmnIbewdq9HRwJp5b9nvYL/uCbPyx+6l998Mw8KQAGQigFeYgY0Iy89qyfYGoDUo/7weAObLGdoG2MdEQ4NX97i77n137/449+7usv5klp3wNgCIRSkIHUMXM12LV4kjqkWDPB1OaMUplfJLfT8DvYCOHU/O2d/k8ffdwU/+DrH77/G7/3XQPOARiKh0Ip2L7UKROxKMH4mg0RTG1I+oUZsbRRgsxGCafmb+/Vf3r/O8+L//lXvm2eFABDctBMZzeFUpCFceqYieRhM5098uO3GYKpDWqms/Yf7NFgD/Bse2kIHmyMcGr+9v7wmz8s/u6vmCcFwKC0oZRHs0MGUofM7WDX4li11GYJpjYv4g+wqik2Tjj19vZ+9fc//uhnf8M8KQAG5QtCKchKxM96k2Y6e5rBOgZLMLVhzXT2oCiKw0Ef5Nt2y7oyCJ2NE0699NH3m+J/NU8KgOH5gkHDkI/UGbMX7JIcBR3R0ynBVDci3uUZpaF4sFHRw6k/a+dJ/bJ5UgAMSts281eEUpCdiP8mx2bbbZ5gqgOp7O/e4A/0TTuSZboSNZz6j3/6w+Inf/mDZ39unhQAw/EkPXnvsWsK+UgdMbvBLsmhgLwbgqnujNPdn0j2y7q6FuyY2ZJo4dRXf888KQAGRygFGUqdMBFnJxtP0xHBVEdS+V/EH2xVU3QmQjj17GPzpAAYpPbJe9e0zECWJqkjJpL2NemRH8duCKY61Exnk3QnKJK9sq5uBjtmtmjI4dT7331e/J1f/vb7/+lPzJMCYFB+3JP3IE+pA2Y/2OU5DlohtjWCqe5F/AGfGIROl4YYTv3Hb/6w+DtfMU8KgEFpP/x9Lt28BfIU8d/nRPVmtwRTHUvlgA9DHfTLIXkSZzo1pHDqq7//8Uf/8NfNkwJgUNougmtaZSBfqfNlL9glOmqmM7OlOiaY2o6IIc2orKsrGayDQPoeTrXzpP6Xr3/4/q//X+ZJATAoB2nI+VOXFfKUOl4iVkspqNgCwdQWpF/Cd4Md9o6nGrANfQ2n3v9uY54UAEP0Yp6UNhnI3ih1vkRy2ExnD/xodk8wtT2T1FcfyX5ZV9cDXmu2rG/h1H/803ae1LfMkwJgSMyTgp5InS4RK4c8hGFLBFNbku4ShRyEnsEa6JmLBEWn9SWc+vI73zs+ME8KgGE5LIriinlS0Bvj1PESyT3txdsjmNqiZjq7n35RR3K1rCtJNCsbejj14cdNMfnV7773u//Pn0d7EwDAsN1tprPrWvegH1KHy36wy3Vs7Mx2Caa2L+I/gEkapgcrGWo49UfvPy8mX/n2e++99/FfWn1vAJClV617PuxBv0TscBkLz7dLMLVlqaT5INhh73jaARc1tHDqydMffPj3f/WDZx8++6FQCoCheKh1D/ondbZcDXbpjsy+2z7BVB7GAQeh30lD9eBcp0OdoYRTX/7d7x3/4r/59o+aJwXAQBynp+7dVH0A/ZI6WiIGNMbMZEAwlYE0ZC3ii4BkmqUNKZz68HtFMfnqd9/7HfOkABiOJ0VRXFd5AL01Cjjw/KHKzjwIpvLR/hI/CnbMN9JwPVjKEMKpP/qzdp7UsXlSAAxJO+D8WjOdPXZVoX9SJ8udgJfOeJlMCKYykcqdI/7DuJ/BGuiRPodTT45+8OHfM08KgOFob6r+FQPOofciVjreTZ1LZEAwlZFmOntQFMVhsMPeLetKUs1K+hhO/dPf+d7xL/xr86QAGIx7RVGokoKeSx0sN4Jdx2NjZfIimMpPxJBmnIbtwdL6Ek6186S++K+++95vmycFwDC0VVKfa6azkQHnMAgRO1i8fmVGMJWZdNfpINhh76QnE8JKcg+n/ui958VP/Mvj9/6zeVIADEPb+nLFsGAYhtS5shvsch4205lxMpkRTOVplMoLI7mdhu7BSnINpx4//cGHP22eFADD8MQsKRiW1LES8d+017EMCaYylMoKI/a8Sq65kNzCKfOkABiI9kbpj3viHgzSOHWuRHKg4jNPgqlMpTtSR8EOe6+sq5sZrIMeyiGcevaxeVIADMbDNNzcgGAYmNSpcjvYdT1WLZWvT0c/AZm7VRTF14Idc/vm50EG66CH2tioObHsNlhqmssdx+lttOFUU7y90Xae1Jd+4zvvad0DoOfaG6O3VBXAoEXsVJk009nTDNbBGVRMZSy9ITgMdti7ZV1JsrmwbVROPX73Bx9Ov2qeFAC9dmy4OQxf6lDZC3apj4KOyukNwVT+bgU85lEaxgcvrBoudRlO/e+//b3jnzdPCoB+O0hte24OwvBFDGhGaY4zmRJMZS6VG94Ldtg7Em1Oyy2c+vDjpviJXzFPCoBeayvzP9dMZ7e0uMDwpc6U3WCX+rCZzoyKyZxgqh/Gqbw6kv2yrq5Fv/C8KZdw6o/+7IfF33r4reP//N7HWvcA6KO2reULzXR2XdsexJA6UkYBL3fEY+4dwVQPpLLDiP+gVE3xlm2HU1//Dx8/+6lf+eDDj7/fqJQCoG9OzpGKOPwYIpukzpRIDprp7LGf+vwJpnoivXl4Euyw98q6ijhji3NsK5y6/41n7/3Sb3/nR543xY+6RgD0yItAqiiKK+ZIQTxlXV1vO1KCHfixaqn+EEz1S8R/WGOD0DlLl+HUh99rir/5z7793v/99EOtewD0zcGrQMrwXwgrYiA98ZrXH4KpHkkzAB4GO+xdSTfzdBFO/af3flj8zYffOv7g+PtCKQD6pA2kfiwNNvfhDIJKHSh7wY7+SHVovwim+ifkwLqyrq5ksA4ytMlw6uv/4fvmSQHQNycDKU/ag8BS50nEgMY4mJ4RTPVMeoNxN9hh7xiEziKbCKfu/2Y7T+rb5kkB0BcCKeC0UepAieTQ00b7RzDVT5P0mN9IbqShfXCmdYVTH36c5km9a54UANlrh/veE0gBp6WOk4jdNqqlekgw1UNpTkDIAXYZrIGMXTacejFP6oF5UgBk7+RT9kYCKeAMk9R5Esk9r4f9JJjqqWY6u9+WKQY77KtpeB/MddFw6hv//mPzpADIXVsx/wVP2QMWSZ0mN4KdpOOgxRuD8OnoJ6Dn2n94Xwt2zJOyrh54I8YibTjVNMufoi9945nWPQBydpgeff7AVQKWELHTZOQzYn+pmOqxNNTtINhh7wTtlY5txSqoYsnKqXae1N/4JfOkAMjS8YmB5teFUsAyUofJ1WAn60nqKKKnBFP9N05vXCK5k4b5Ecmaw6n/970fFn/jy+ZJAZCdtl3vx1O7noHmwNLKuvpM1GqpDNbAJWjl67n2zUpZV+2Lz51gh94m4p7SF00bNK3QolfMaev7+n/4/rNf+u1vN8+bcAMhAchXWx1132POgUsYBRx4/tDrZv+VzSqDWMhWWVft3bTdYFfoc16EYvjb//r6my9UF3jZevVS9zPmSQGQjyfpZtt9s1GAy0gdJe8GPIk/prK0/1RMDUebjn852DG3b+S09EV0gcqpZx83xU/88nfe07oHwJYdnwijHrsYwJpEnLF0Vyg1DCqmBqSsq7Z6aC/YYf94M51F7KMO5a2KqVeWfPlq50n99FePjz/+fqN1D4BtaMOodnj5A0PMgXUr6+p6wKe1t/P4rqk2HQYVU8PSVk29E+yYx2VdKX+PaonKqd/49+ZJAbA1D08EUt6rAJsSsVpq7HV1OARTA9KWg5d11Q7O3A902DvpyYSexBDVgnDqJ3/tz99/+scf/cXopwiATgmjgM6UdTUKOGv4sJnOIoZxgyWYGp72helmsKcx3E5VU+Y0RHUqnPrwe03xP/6z4/f//MMfCqUA2LTXbXpFUTwSRgFdKevqM+kmfTQRj3nQBFMD074ZKuuq/Yf6xWCH3s6Zup7BOtiWFE6186T+7i9/8NEPnxdCKQA25ehEVZQnBAPbMg5WkNA68Lo7PIafD1RZV08DlnR+3kDRYZo7/PyUdp7Uw9/69o9EP18ArF1bFfUo/e+Bp0AB21bW1bWA84WP08Bzr8EDo2JquG4FfDLDJN29JKCf/NUP33/6x89USQGwLoevwih354EMRXwy+UQoNUwqpgasrKv2TdResMO+20xneo4HZlHF1LPvNcXf+iXzpAC4NEEU0AtlXbUzhb8c7GodNdPZlQzWwQaomBq2tmrq3WDHPCrramLwaAz/6b3nxU9+pZ0n1QilAFhFOyPqcQqiHguigJ6JWC3lKewDJpgasLbMsayre+1T6wId9k56ob6VwVrYoBPzpP6C8wzAAscnQ6gURGkFAXopPegq2izhQ7OEh00wNXzjFNJEelrDfllX9939HC7zpACY40lRFE9PBFFPhVDAUJR1dSVo5ZBqqYETTA1c29JW1lX7D/lLwQ69DeSuZ7AO1sg8KQBOVEA9Tf9rA6gPmunssZMDDNw4WMFB657X9+Ez/DyIsq7af8xXgx32F5rp7H4G6+CS2uHnJ+ZJad0DGLZXwVORQqfX/1c1NBBVWVfXAz51vf19cMX84OFTMRXHKOAL2bisqwdeyPrPPCmAXjs8tfg2dHr1u/lV1VORZj/5nQ1wtohPHh/7vRCDYCqI9g5jWVcPi6K4Eeiwd1MgF/FFfFB+6+h7/11RFN+Mfh4AcqaaCWAzyrpqZwbvBTu9R810FvHpgyFp5QskDct7HLAv+ccMPgUAAPqmrKvPpM9w0Z7E9zk3POL4VPQTEEkKZyKmzpJ2AACgj0YBQ6lDoVQsgql42pDmKNhR30jDAgEAAHohdbzcCXi1bmWwBjokmAomDY+LOHNJ1RQAANAnET/D3DWGJR7BVEDNdHb/jCfkDN3VNDQQAAAga6njI9KDq1rHCgpiEkzFFbJqKg0PBAAAyFnEgGaUOnwIRjAVVBomdxDs6HeCBnIAAEBPpE6Pq8Gu15PU2UNAgqnYRqlcMpLbaYggAABAVlKHR8hqqQzWwJYIpgJLZZIRX/Qk8QAAQI7GqdMjkoPU0UNQZdM0rn1wZV21Tz3YDXYWPufFDwAAyEXq7Hg32AVpO3iueRJfbCqmKIKWTaqaAgAAchLxM8pEKIVgiral70FRFIfBzsRuWVf6mAEAgK0r6+p6URR7wa7EUdDRMpwimOKViCHNOA0XBAAA2KaI1VLjNPeY4ARTvNBMZ4+LorgX7GzsSOgBAIBtSp0c0Wb+HjbTmfEqvCCY4qRxGj4XyX5ZV9f8FAAAAF1LHRzjgCfeWBVeE0zxWiqjjPiiqGoKAADYhknq5IjkIHXswAtl0zTOBG8o6+ppwFLSz6ch8AAAABuXOjfeCXam2w6dK2ZLcZKKKc5yK+BZmRiEDgAAdChi58ZEKMVpgine0kxnj9phdMHOzK4+ZwAAoAtlXd0simIv2Mk+aqaziKNjOIdginkiVk2Nyrq6ksE6AACAgUqdGhGrpRQCcCbBFGdqprN2ztTdYGdnJ+jwdwAAoDujgDN9D830ZR7BFItM0nC6SPbLurrupwIAAFi31KERsXIoYkcOSxJMMVcaShfxRVPVFAAAsAnj1KkRyb3UkQNnEkyxUDOd3S+K4kmws7RX1pVEHwAAWJvUmbEf7Iweu/HPeQRTLCNi1dQkDSUEAABYh4gBzTh14sBcginO1Uxnj4qiOAh2pnY8NQIAAFiH1JGxF+xkPmmms4hPH2RFgimWNQ44CP1OGk4IAABwIakTI2JA40Y/SxFMsZQ0rC7ii6mEHwAAuIxRwIHnD1PnDZxLMMUq2pDmKNgZu5GGFAIAAKwkdWDcCXjWVEuxNMEUS0tD6yIO7FM1BQAAXETEzxJ3U8cNLEUwxUqa6ex+URSHwc7a1bKuJP4AAMDSUufFjWBn7NiNfVYlmOIiIoY04zS0EAAAYBkhB56nThtYmmCKlTXT2eOiKA6CnbmdoG2MAADAilLHxdVg5+0wddjASgRTXNQolWlGcjsNLwQAADhT6rSIeFPbjXwuRDDFhaTyzIilqe4AAAAAi4xTx0UkB8109shPBRdRNk3jxHFhZV21T1vYDXYGP+dFFwAAOC11WLwb7MS0nTTXPImPi1IxxWVFHISuagoAADhLxM8KE6EUl6Fiiksr66qtHtoLdibvNtOZHmoAAOCFsq6uF0XxtWBn46iZzszh5VJUTLEOtwKexVEaaggAAFAErZaK2EHDmgmmuLRUtnkv2JncCTr8HQAAOKWsq3HA2buHzXT2IIN10HOCKdZlnIbeRbJf1tU1P0EAABBX6qSIWDmkWoq1EEyxFs109kEKp6JRNQUAALFNUkdFJAfNdPY4+oVnPQw/Z63KunoasIT1C8105kl9AAAQTOqgeCfYYbedMldScQJcmoop1i3iIPSxQegAABBSxA6KsVCKdRJMsVbNdPaoKIqHwc7qrv5qAACIpayr9qb8XrDDPmqmM+NMWCvBFJsQcvBfWVdXMlgHAACwYaljIuKM3YgdMmyYYIq1a6azds7U3WBndifoLyYAAIhoFHC27mHqkIG1EkyxKZM0FC+S/bKurvuJAgCA4UqdEhG7RFRLsRGCKTYiDcOL+GKt3xoAAIZtnDomIrmXOmNg7QRTbEwznd0viuJJsDN8NQ1BBAAABiZ1SOwHu67HxpawSYIpNi1k1VQahggAAAxLxA6JUeqIgY0QTLFRaTjeQbCzvBM0kAMAgMFKnRFXg13hJ6kTBjZGMEUXxgEHod9JQxEBAICeSx0RIaulMlgDAyeYYuPSkLyIL+IGoQMAwDCMAg48f5g6YGCjBFN0pQ1pjoKd7RtpOCIAANBTqRPiTrDrd6xaiq4IpuhEGpYX8YVNPzYAAPRbyO6P1PkCGyeYojPNdPagKIrDYGd8t6wrdxoAAKCHUgfEjWDX7shYErokmKJrEUOacRqWCAAA9EvEDohx6niBTgim6FQznT0uiuIg2FnfSU8mBAAAeiJ1PuwGu16HzXRmHAmdEkyxDaM0TC+S22loIgAAkLnU8RDx5rIb6nROMEXnUlloxJ5ldx4AAKAfxqnzIZKDZjp75OeTrpVN0zjpbEVZV08DlsZ+Pg2BBwAAMlTW1bWiKN4Jdm3ajpYrZkuxDSqm2KZbAc++p1sAAEDeIr5nnwil2BbBFFuTykQPg12B3bKu9G0DAECGyrq6WRTFXrBrc9RMZz6jsDWCKbYtYtXUKA1TBAAA8hKxWmqUwRoITDDFVjXTWTtn6l6wq7CjpQ8AAPKSOhuizcA9NAOXbRNMkYNxGrYXyX5ZV9f99AEAwPaljoaIlUOqpdg6wRRbl4bsRexp1scNAAB5mKTOhkjuNdPZYz9/bJtgiiw001n7i+BJsKuxV9ZVxBlbAACQjdTJsB/sihy7UU4uBFPkJGIZ6dggdAAA2KqQ3RupcwW2TjBFNprp7FFRFA+DXZFdfd0AALAdqYNhL9jpP0odK5AFwRS5CTlwsKyrKxmsAwAAwkidCxGrpYwTISuCKbLSTGdPi6K4G+yq7KRhiwAAQHdGqYMhkoepUwWyIZgiR5M0jC+SG2noIgAAsGGpYyFkt0YGa4A3CKbIThrCF/EFU9UUAAB0Y5I6FyK5mzpUICuCKbLUTGf3i6I4DHZ1rqbhiwAAwIakToUbwc7vsRvh5EowRc4iDiKcpCGMAADAZkQMaEapMwWyI5giW2ko30GwK7Sj7xsAADYjdShcDXZ6n6SOFMiSYIrcjQMOQr+ThjECAABrkjoTQlZLZbAGmEswRdbScL6Ivzzc0QAAgPUaBRx4fpA6USBbZdM0rg7ZK+uqDah2g12pz/klAgAAl5c6Et4NdirbzpNrnsRH7lRM0RcRy09VTQEAwHpEfG89EUrRB4IpeqGZzh4URXEY7GrtlnWlHxwAAC6hrKvrRVHsBTuHR0FHotBDgin6JGJIM05DGgEAgIuJWC01aqazDzJYB5xLMEVvNNPZ43Z4X7ArtuNOBwAAXEzqQIg2q/YwdZxALwim6JtRGuIXyX5ZV9f8pAIAwPJS58E44CkzDoReEUzRK6kcNeIvF1VTAACwmknqQIjkIHWaQG+UTdO4WvROWVdPA5bkfl5JLgAAnC91HLwT7FS1nSVXzJaib1RM0Ve3Al45VVMAALCciO+dJ0Ip+kgwRS8109mjdqhfsKu3W9ZVxDZGAABYWllXN4ui2At2xo6a6cxnBXpJMEWfRayaGpV1dSWDdQAAQK4iVktF/GzEQAim6K1mOmvnTN0LdgV3gg5/BwCAc6UOg2izaA9TRwn0kmCKvhunIX+R7Jd1dd1PLgAAfCJ1FowCnhLVUvSaYIpeS8P9Iv7yUTUFAABvGqcOg0jupU4S6C3BFL3XTGf3i6J4EuxK7pV15c4IAAC8rJZqOwr2g52LYzesGQLBFEMRsmqqrKvPZLAOAADYtogBzTh1kECvCaYYhDTs72Gwq7kbNJADAIDXUifBXrAz8qSZziI+fZABEkwxJBFDmjtpyCMAAISTOggiVku5Qc1gCKYYjDT0727AK+pOCQAAUY1SJ0EkD1PHCAyCYIqhaUOao2BX9UYa9ggAAGGkzoE7Aa+4aikGRTDFoKThfxFLeVVNAQAQTcT3wHdTpwgMhmCKwWmms/tFURwGu7JX09BHAAAYvNQxcCPYlT5yQ5ohEkwxVCGrptLwRwAAGLqIAc04dYjAoAimGKQ0DPAg2NXdCRrIAQAQSOoUuBrsmh+mzhAYHMEUQ9aGNMfBrvDtNAQSAAAGJ3UIhKyWymANsBGCKQYrDQWM+EvLnRQAAIZqnDoFIjlIHSEwSGXTNK4sg1bWVRtQ7Qa7yp/zywsAgCFJnQHvBruobQfINU/iY8hUTBHBKOBVVjUFAMDQRHyPOxFKMXQqpgihrKu2emgv2NW+20xnetEBAOi9sq6uF0XxtWBX8qiZzsyPZfBUTBFFxKqpURoOCQAAfRexWiriZxgCEkwRQjOdPS6K4l6wq70TdPg7AAADUtbVOODM2MNmOnuQwTpg4wRTRDJOwwMj2S/r6pqfcgAA+ih1AITsfshgDdAJwRRhNNPZBymcikbVFAAAfTVJnQCR3EsdHxCC4eeEU9bV04ClwJ9XCgwAQJ+kyv93gl20tsPjSrqpDiGomCKiWwGPeWIQOgAAPROx8n8slCIawRThNNPZo3aYYLDj3tWnDgBAX5R1dbMoir1gF+yomc6M4SAcwRRRRayaGpV1dSWDdQAAwFyp0j9iQBPxMwoIpoipmc7aOVN3gx38TtDh7wAA9Mso4EzYw9TZAeEIpohskoYLRrJf1tV1P/UAAOQoVfhHHEGhWoqwBFOElYYKRvylp2oKAIBcjVOlfyR3U0cHhCSYIrRmOrtfFMWTYOdgr6wrd2QAAMhKquzfD3ZVjoPO04LXBFMQs2pqkoZKAgBALiJW9o9SJweEJZgivDRk8GGw87ATNJADACBDqaJ/L9i1eZI6OCA0wRS8NAo4CP1OGi4JAABbkyr5I7azuVFMeIVgCl5KwwYj/jLUzw4AwLaNAg48f5g6NyA8wRR8og1pjoKdjxtpyCQAAHQuVfDfCXbmj1VLwScEU5CkoYMRBy7qawcAYFtCdi2kjg0IrxBMwZvS8MHDYKdlt6wrd2wAAOhUqty/EeysHxmnAW8STMHbIoY04zR0EgAAuhIxoBmnTg0gEUzBKc109rgoioNg52UnaBsjAABbkCr2rwY794epQwM4QTAFZxuloYSR3E7DJwEAYGNSpX7Em6JuBMMZBFNwhlReG7G02B0cAAA2bZwq9iM5aKazR36y4G1l0zROC8xR1lX7tIzdYOfn88109iCDdQAAMDCpQv/dYNe17cS4YrYUnE3FFCwWcRC6p4QAALApESv0J0IpmE8wBQukyqHDYOdot6wr/e8AAKxVWVc3i6LYC3ZWj5rpzHtrWEAwBee7FfAcjdJQSgAAWJeIlfkROzBgJYIpOEcznbVzpu4FO087WvoAAFiXVJEfbXbrodmtcD7BFCxnnIYWRrJf1tU1Px8AAFxGqsSPWDmkWgqWIJiCJaRhhRF7w1VNAQBwWZNUkR/JvWY6e+wnB85XNk3jNMGSyrpqf7lcDXa+vtBMZxGfngIAwCWlCvx3gp3HttPiiifxwXJUTMFqIpbjjg1CBwDggiJW4I+FUrA8wRSsoJnOHhVF8TDYOdvVHw8AwKrKumqfbr0X7MQdNdOZcRiwAsEUrC7k4Mayrq5ksA4AAHogVdxHnNF6K4M1QK8IpmBFzXT2tCiKu8HO207QNxYAAFzMKFXeR/IwdVgAKxBMwcVM0lDDSPbLurru5wUAgEVSpX3ILoMM1gC9I5iCC0jDDCP+4tEvDwDAecap4j6Su6mzAliRYAouTHBFjAAAD+9JREFUqJnO7hdFcRjs/F1NQywBAOAtqcJ+P9iZOXYDFy5OMAWXE3Hu0iQNswQAgLfeKwY8I6PUUQFcgGAKLiENNzwIdg539M8DAHBaqqy/GuzEPEmdFMAFCabg8sYBB6HfSUMtAQCgSBX1IaulMlgD9JpgCi4pDTmM+EvYnSEAAF4ZBRx4fpA6KIBLKJumcf5gDcq6agOq3WDn8nN+GQMAxJYq6d8NdhLajolrnsQHl6diCtYnYhmvqikAACK+J5wIpWA9BFOwJs109qAoisNg53O3rCt99QAAQZV1db0oir1gR38UdJQHbIRgCtYrYkgzTsMuAQCIJ2K11LiZzj7IYB0wCIIpWKNmOntcFMW9YOd0Jz2ZEACAQFLlfLQZq4fNdGacBayRYArWb5yGIUZyu6yra36WAABiSBXzEW9OuiELayaYgjVLZb0Rf2HpswcAiGOcKucjOfBEali/smkapxU2oKyrpwFLmz+fhsADADBQqVL+nWDXt+2IuGK2FKyfiinYnFsBz62qKQCA4Yv4nm8ilILNEEzBhqQy38Ng53e3rCt99wAAA1XW1c2iKPaCXd+jZjrzHhc2RDAFmxWxamqUhmECADA8EaulRhmsAQZLMAUb1Exn7Zypu8HO8Y6WPgCA4UmV8dFmqB6aoQqbJZiCzZukYYmR7Jd1dd3PFgDAMKSK+IiVQ6qlYMMEU7BhaUhixF9o+vABAIZjkirjI7nXTGeP/QzDZgmmoAPNdHa/KIonwc71XllXEWdsAQAMSqqE3w92VY/daIVuCKagOyGrpgxCBwDovYgBzTh1PgAbJpiCjjTT2aOiKA6Cne9dffkAAP2VKuD3gl3Co2Y68zAf6IhgCro1DjgIfVTW1ZUM1gEAwApS5XvEainjKKBDginoUDOdPU2DIyPZCXjMAABDMEoV8JEcpk4HoCOCKeheG9IcBTvvN9LQTAAAeiBVvEccyaBaCjommIKOpSGKEX/Jq5oCAOiPSap8j+Ru6nAAOiSYgi1oprMHbZlwsHN/NQ3PBAAgY6nS/Uawa3TsRipsh2AKtidk1VQaogkAQL4iBjSj1NkAdEwwBVvSTGePi6I4CHb+d4I+2QUAoBdShfvVYFfrSTOd3c9gHRCSYAq2a5TKhiO5nYZpAgCQkVTZHrJaKoM1QFiCKdiiVC4c8Ze/O1IAAPkZBxx4/rCZzh5lsA4Iq2yaxtWHLSvrqn36x26w6/A5bwIAAPKQKtrfDXY52s6Fa57EB9ulYgryEPFpdaqmAADyEfG92UQoBdsnmIIMpMqhw2DXYresK/38AABbVtbV9aIo9oJdh6OgIzUgO4IpyEfEqqlxGrIJAMD2RKyWGqd5r8CWCaYgE6mM+F6w67HjThUAwPakCvZos04Pm+nMWAnIhGAK8jJOQxgj2S/r6pqfQwCAbqXK9XHA026cBGREMAUZSeXEEd8cqJoCAOjeJFWwR3LQTGeP/axBPsqmaVwOyExZV+0vy6vBrsvnm+nsQQbrAAAYvFSx/k6wK912JlwxWwryomIK8hSxvFjVFABAdyK+95oIpSA/ginIUDOdPSqK4mGwa7Nb1lXENkYAgE6VdXWzKIq9YGf9qJnOvNeEDAmmIF8Rq6ZGZV1dyWAdAABDFrFaysBzyJRgCjLVTGdPi6K4G+z67AQd/g4A0IlUob4b7GwfmmUK+RJMQd4maUhjJPtlXV33cwkAsF6pMj1i5dCtDNYAzCGYgoyl4YwR3zyomgIAWL9xqlCP5F7qRAAyJZiCzDXT2f22/DjYddor68qdLQCANUkV6fvBzuexG56QP8EU9EPEX6iTsq4+k8E6AACGIOL7yXHqQAAyJpiCHmims0dFURwEu1Y7np4CAHB5qRJ9L9ipPGqms4hPH4TeEUxBf4wDDkK/k4Z0AgBwAakCPWK1lLEQ0BOCKeiJNLQx4l0fd7oAAC6urUDfDXb+HqaOA6AHBFPQL21IcxTsmt1IwzoBAFhBqjy/E/CcGQcBPSKYgh5Jwxsj/qJVNQUAsLqI76Hupk4DoCcEU9AzzXT2oCiKw2DX7WpZV+58AQAsKVWc3wh2vo7d0IT+EUxBP0UMacZpeCcAAOeLGNCMUocB0COCKeihZjp7XBTFQbBrtxP0iTIAACtJleZXg521w2Y6u5/BOoAVCaagv0apXDmS22VdXfMzCwBwtlRhHvFmnhuY0FOCKeipVKYc8RewO2EAAPPdT5XmkRw009kjPxPQT4Ip6LFmOmtnBxwFu4btIHR3xAAATinr6mbQgefeG/L/t3cHSXEcWRiAsxyzl24g5gAVYk5gfALjEwgva+X2CdScwGhVS8EN0AlMn2Ag6gADNzAnyIn0PHmMEKib7obqyu+L6PA2eakIZ/z56iU7TDAFu++owj18Hy/NAADwv1Bqr9LO8pPcD9cjWAfwRIIp2HHRtryocB/PvdIHAPDXXKnzCj/hu6n09UGYFMEUTEONXVPl4HUhnAIA+DOcqe0VvmIWc1eBHSaYggmI9uUPFe7lW7dkAEDNYvbmuwpLsMj9cD6CdQBrEkzBdMxj+GNt3jVd66U+AKA6TdeWrvn3le78bARrADZAMAUTEW3Mtf4PWjgFAFQlQqmPle76We6HyxGsA9gAwRRMSO6HEs5cVbqnwikAoAqVh1K3uqVgWgRTMD01/49aOAUATFrloVRxYuA5TEuTc7alMDFN15ZBkD9WvK+fykuFDi0AwJTEBVyNg84/u8n9sDeOpQCbomMKpqn29uYSyl00Xbs/grUAAKyl6drXTddeVB5KFUcjWAOwYYIpmKDcD9cppePK9/ZthFMOMADAzmq69iClVAZ9f1/5Li5yP1yMYB3AhgmmYLpOSrtz5fv7qsxgKJ82lpvGEawHAGBpTdfOU0q/p5TeqJpuKZgqM6ZgwgzHvOM25k6dj2hNAAD3RJfUqUDqLx9yP9Q+qgImSzAFExfzCGpv/f67RZnBlfvhcjxLAgD489xWBnvPzZK6o1wu7nnUBqZLMAUTFzduv9vnez6Ug59DDgDw0mLkwCx+r2zIHb/mfjgZ0XqADRNMQQU8Lfyg2winHHYAgBfRdO1hzAb12d59V7kfvLIMEyeYggpEW/ilG7gH3cT8KS+9AADPouna/QikjFx42A/OZzB9gimoRLzq8t5+P2oRAdX1iNcIAOyw+GzvRDf7N33K/XA48jUCGyCYgoo0XXutTXwp5k8BABsXF4XmSC3nny4LoQ7f2Weoimd2l/NLSum66dqjXVgsADBu5TGauCB8L5RayrFQCuqhYwoq03TthVkGK7kqgZ75BgDAqmLO56mz10rK7M99netQD8EUVCYGbf7bvq/sUwRUbu8AgEfFHKl5dGGzmp9zP5yqGdRDMAUVarr21MDNJzsuA0vd4gEAX9N07SxCKZ/srW6R++Fg1xYNrMeMKahTOTDd2vsneW/+FADwpZgjdZlS+k0o9WTzHV03sAYdU1CpuM37zf6vZRGv95k/BQCVijlSJymlH/0bWMtZ7gcXf1AhwRRULF6HeePfwNrOIqAyfwoAKhFzpGbRTc16bmPgubMUVMinfFA3t1KbUeZ1XTZdO49DKgAwYfFJ/7VQamNOhFJQLx1TULmmay88YbxRt9HOb0A6AExMBFJzHecbdZP7YW9Cfw+wIsEUVC7mIvyn9jpsQQmoTt0AAsBui7PSUfwEUpv3U+6H86n9UcDyBFNAOXCVDp9fVGJrFhFSneuiAoDxi0/zD+NnqPn2LHI/HEz1jwOWI5gCPh++rj1t/CxKSFVuBS9yP1xW8PcCwE6IzqgSRB0Io57Nv5yHAMEU8KeYmfBRNZ5V+dyvHMYuIhgsv0tdVQCwXU3XlvCpXMztx+/ABd2zO8v94CEeQDAF/F/TtSUkeasko3ATQRUAsBl7ZkSNRrmc23MZBxT/GMEagPGYpZR+tx+j8MbhGQCYqLlQCvhMxxRwR9O15+YqAACwJTe5H/YUF/jsO5UAvjBTEAAAtsRcKeAOwRRwR+6HMtfoWFUAANiwRe6HC0UF/k4wBXzNSQzfBgCATdEtBdwjmALuiWGUc5UBAGBDjqMzH+AOwRTwVbkfTku7teoAALCm2+jIB7hHMAU8RtcUAADrmkVHPsA9Tc5ZVYAHNV1bOqfeqRAAAE9wlfthX+GAh+iYAr5lHu3XAACwqpmKAY8RTAGPiiGVZgIAALCqT7kfLlQNeIxgCvim3A+la+pGpQAAWNKtbilgGYIpYFkOFgAALOskOu8BHiWYApaS++E8pbRQLQAAvuHGKAhgWYIpYBW6pgAA+JZ57oc/VAlYhmAKWFruh8uU0gcVAwDgAYvcD6eKAyxLMAWsah7DLAEA4EtzFQFWIZgCVhJt2Q4cAAB86Sz3w4WqAKsQTAEry/1QhlleqRwAAOHWPFLgKQRTwFMdqRwAAOHIwHPgKQRTwJPEIPRj1QMAqN6n3A/ntRcBeBrBFPBkuR/mPukDAKjarU56YB2CKWBdh17pAwCo1oFP+IB1CKaAteR+uI5wCgCAuvwc4x0AnkwwBawtngX+WSUBAKpxlvvh1HYD6xJMARsRBxPhFADA9JVQylwpYCMEU8DGRDh1pqIAAJMllAI2SjAFbFQcVI5VFQBgcoRSwMY1OWdVBTau6dpyaPmosgAAkyCUArZCxxSwFfFZ308ppVsVBgDYab8KpYBt0TEFbFXTtfsppRJSvVVpAICdUi4YD+MFZoCt0DEFbFXuh8uU0oGh6AAAO2WRUtoTSgHbpmMKeDZN1x5G99QrVQcAGKXSJTXP/XBie4DnoGMKeDa5H87LzVtK6YOqAwCMTumS2hdKAc9JxxTwImL2VDn0fG8HAABe1E1K6chne8BLEEwBLyo+7ysB1Rs7AQDwrHy2B7w4wRQwCk3XzlNKM/OnAACeRXmYZpb74Q/lBl6SYAoYjaZry/ypElC9sysAAFuxiEDqUnmBMRBMAaPTdO1BBFTmTwEAbMZNBFLn6gmMiWAKGK2ma48ioDJ/CgDgacocqZPcD3P1A8ZIMAWMWtO1r2P21Hs7BQCwkrMYbn6tbMBYCaaAnRDzp8qLMT/aMQCARy0ikLpQJmDsBFPATon5UyWgemvnAADuuI05UqfKAuwKwRSwk5quncX8qVd2EAAgHccsqT+UAtglgilgZ8X8qRJO/WIXAYBKfYouKXOkgJ0kmAJ2XsyfKi3r39tNAKASVxFImSMF7DTBFDAZTdcexvypN3YVAJgoc6SASRFMAZPTdO1RfOInoAIApuImOsTNkQImRTAFTFZ0UM184gcA7LCrCKN0SAGTJJgCJi9mUB3FTxcVADB2pTvqvHRI5X64tFvAlAmmgKo0XbufUjpIKR3qpAIARmSRUiqDzM+FUUBNBFNA1SKo+vvvdUrpbe11AQC2pnRDXaeULj//18t6QM0EUwAPaLr2dQRWAADruDSwHOArUkr/BdrpKPPB1VZ6AAAAAElFTkSuQmCC" alt="Logo" />
+               </div>
+               <input
+                  type="file"
+                  id="logoInput"
+                  accept="image/*"
+                  onchange="changeLogo(event)"
+                  />
+               Hệ thống Tiếp nhận công tác - KLH SNOUL
+            </h1>
+            <div class="user-info">
+               <div>
+                  <div id="userName" style="font-weight: 600">Loading...</div>
+                  <div id="userRole" style="font-size: 12px; opacity: 0.8">...</div>
+               </div>
+               <div class="user-avatar" id="userAvatar">?</div>
+            </div>
+         </div>
+         <div class="stats-container">
+            <!-- Card 1: Tổng số đăng ký -->
+            <div class="stat-card">
+               <div class="icon">
+                  <svg
+                     width="50"
+                     height="50"
+                     viewBox="0 0 24 24"
+                     fill="none"
+                     xmlns="http://www.w3.org/2000/svg"
+                     >
+                     <path
+                        d="M9 11L12 14L22 4"
+                        stroke="#00682B"
+                        stroke-width="2.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        />
+                     <path
+                        d="M21 12V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H16"
+                        stroke="#00682B"
+                        stroke-width="2.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        />
+                  </svg>
+               </div>
+               <h3>Tổng số đăng ký</h3>
+               <div class="number" id="statTotal">0</div>
+            </div>
+            <!-- Card 2: Đăng ký tháng này -->
+            <div class="stat-card">
+               <div class="icon">
+                  <svg
+                     width="50"
+                     height="50"
+                     viewBox="0 0 24 24"
+                     fill="none"
+                     xmlns="http://www.w3.org/2000/svg"
+                     >
+                     <rect
+                        x="3"
+                        y="4"
+                        width="18"
+                        height="18"
+                        rx="2"
+                        stroke="#00682B"
+                        stroke-width="2.5"
+                        />
+                     <path
+                        d="M16 2V6"
+                        stroke="#00682B"
+                        stroke-width="2.5"
+                        stroke-linecap="round"
+                        />
+                     <path
+                        d="M8 2V6"
+                        stroke="#00682B"
+                        stroke-width="2.5"
+                        stroke-linecap="round"
+                        />
+                     <path d="M3 10H21" stroke="#00682B" stroke-width="2.5" />
+                     <circle cx="8" cy="14" r="1.2" fill="#00682B" />
+                     <circle cx="12" cy="14" r="1.2" fill="#00682B" />
+                     <circle cx="16" cy="14" r="1.2" fill="#00682B" />
+                     <circle cx="8" cy="18" r="1.2" fill="#00682B" />
+                     <circle cx="12" cy="18" r="1.2" fill="#00682B" />
+                  </svg>
+               </div>
+               <h3>Đăng ký tháng này</h3>
+               <div class="number" id="statMonth">0</div>
+            </div>
+            <!-- Card 3: Chờ duyệt -->
+            <div class="stat-card">
+               <div class="icon">
+                  <svg
+                     width="50"
+                     height="50"
+                     viewBox="0 0 24 24"
+                     fill="none"
+                     xmlns="http://www.w3.org/2000/svg"
+                     >
+                     <circle
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="#ff9800"
+                        stroke-width="2.5"
+                        />
+                     <path
+                        d="M12 6V12L16 14"
+                        stroke="#ff9800"
+                        stroke-width="2.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        />
+                  </svg>
+               </div>
+               <h3>Chờ duyệt</h3>
+               <div class="number" id="statPending">0</div>
+            </div>
+            <!-- Card 4: Đã duyệt -->
+            <div class="stat-card">
+               <div class="icon">
+                  <svg
+                     width="50"
+                     height="50"
+                     viewBox="0 0 24 24"
+                     fill="none"
+                     xmlns="http://www.w3.org/2000/svg"
+                     >
+                     <path
+                        d="M22 11.08V12C21.9988 14.1564 21.3005 16.2547 20.0093 17.9818C18.7182 19.7088 16.9033 20.9725 14.8354 21.5839C12.7674 22.1953 10.5573 22.1219 8.53447 21.3746C6.51168 20.6273 4.78465 19.2461 3.61096 17.4371C2.43727 15.628 1.87979 13.4881 2.02168 11.3363C2.16356 9.18455 2.99721 7.13631 4.39828 5.49706C5.79935 3.85781 7.69279 2.71537 9.79619 2.24013C11.8996 1.76489 14.1003 1.98232 16.07 2.86"
+                        stroke="#4caf50"
+                        stroke-width="2.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        />
+                     <path
+                        d="M22 4L12 14.01L9 11.01"
+                        stroke="#4caf50"
+                        stroke-width="2.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        />
+                  </svg>
+               </div>
+               <h3>Đã duyệt</h3>
+               <div class="number" id="statApproved">0</div>
+            </div>
+         </div>
+         <!-- Charts -->
+         <div class="charts-container">
+            <div class="chart-card">
+               <h3>
+                  <svg
+                     width="20"
+                     height="20"
+                     viewBox="0 0 24 24"
+                     fill="none"
+                     xmlns="http://www.w3.org/2000/svg"
+                     style="vertical-align: middle; margin-right: 8px"
+                     >
+                     <path
+                        d="M18 20V10"
+                        stroke="#00682B"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        />
+                     <path
+                        d="M12 20V4"
+                        stroke="#00682B"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        />
+                     <path
+                        d="M6 20V14"
+                        stroke="#00682B"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        />
+                  </svg>
+                  Biểu đồ theo thời gian
+               </h3>
+               <canvas id="timeChart"></canvas>
+            </div>
+            <div class="chart-card">
+               <h3>
+                  <svg
+                     width="20"
+                     height="20"
+                     viewBox="0 0 24 24"
+                     fill="none"
+                     xmlns="http://www.w3.org/2000/svg"
+                     style="vertical-align: middle; margin-right: 8px"
+                     >
+                     <circle
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="#00682B"
+                        stroke-width="2"
+                        />
+                     <path
+                        d="M12 2C12 2 15 6 15 12C15 18 12 22 12 22"
+                        stroke="#00682B"
+                        stroke-width="2"
+                        />
+                     <path d="M2 12H22" stroke="#00682B" stroke-width="2" />
+                  </svg>
+                  Biểu đồ theo địa điểm
+               </h3>
+               <canvas id="locationChart"></canvas>
+            </div>
+         </div>
+         <!-- Form Section -->
+         <div class="form-section">
+            <div class="form-header" onclick="toggleForm()">
+               <h2 style="display: flex; align-items: center; gap: 10px;">
+                  <svg
+                     width="24"
+                     height="24"
+                     viewBox="0 0 24 24"
+                     fill="none"
+                     xmlns="http://www.w3.org/2000/svg"
+                     >
+                     <circle cx="12" cy="12" r="9" stroke="#00682B" stroke-width="2" />
+                     <path
+                        d="M12 8V16"
+                        stroke="#00682B"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        />
+                     <path
+                        d="M8 12H16"
+                        stroke="#00682B"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        />
+                  </svg>
+                  Đăng ký công tác mới
+               </h2>
+               <span class="toggle-icon" id="toggleIcon">
+                  <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                     <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19V5m0 14-4-4m4 4 4-4"/>
+                  </svg>
+               </span>
+            </div>
+            <div class="form-content" id="formContent">
+               <form id="dangKyForm">
+                  <div class="form-grid">
+                     <div class="form-group">
+                        <label>Họ tên *</label>
+                        <input type="text" id="hoTen"  placeholder="Your name..." required />
+                     </div>
+                     <div class="form-group">
+                        <label>Chức vụ *</label>
+                        <select id="chucVu" required></select>
+                     </div>
+                     <div class="form-group">
+                        <label>Loại phòng *</label>
+                        <select id="phongBan" required></select>
+                     </div>
+                     <div class="form-group">
+                        <label>Email *</label>
+                        <input type="email" id="email" placeholder="example@thagrico.vn" required />
+                     </div>
+                     <div class="form-group">
+                        <label>Ngày đến *</label>
+                        <input type="date" id="ngayDen" required />
+                     </div>
+                     <div class="form-group">
+                        <label>Ngày đi *</label>
+                        <input type="date" id="ngayDi" required />
+                     </div>
+                     <div class="form-group">
+                        <label>Phương tiện *</label>
+                        <select id="phuongTien" required></select>
+                     </div>
+                     <div class="form-group">
+                        <label>Địa điểm công tác *</label>
+                        <select id="diaDiem" required></select>
+                     </div>
+                  </div>
+                  <div class="form-group">
+                     <label>Nhà ăn</label>
+                     <div class="checkbox-group" id="nhaAnGroup"></div>
+                  </div>
+                  <div class="form-group">
+                     <label>Ghi chú</label>
+                     <textarea
+                        id="thongTin"
+                        placeholder="Nhập thông tin bổ sung..."
+                        ></textarea>
+                  </div>
+                  <div class="form-actions">
+                     <button
+                        type="button"
+                        class="btn btn-secondary"
+                        onclick="resetForm()"
+                        >
+                     Hủy
+                     </button>
+                     <button type="submit" class="btn btn-primary">
+                        <svg width="32" height="32" viewBox="0 0 24 24"
+                           fill="none" xmlns="http://www.w3.org/2000/svg">
+                           <circle cx="12" cy="12" r="9" stroke="#FFFFFF" stroke-width="2"/>
+                           <path d="M13 3L7 14H12L11 21L17 10H12L13 3Z"
+                              fill="#FFFFFF"/>
+                        </svg>
+                        Đăng ký ngay
+                     </button>
+                  </div>
+               </form>
+            </div>
+         </div>
+         <!-- Table Section -->
+         <div class="table-section">
+            <div class="table-header">
+               <h2>
+                  <svg
+                     class="w-6 h-6 text-gray-800 dark:text-white"
+                     aria-hidden="true"
+                     xmlns="http://www.w3.org/2000/svg"
+                     width="24"
+                     height="24"
+                     fill="none"
+                     viewBox="0 0 24 24"
+                     >
+                     <path
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-width="2"
+                        d="M9 8h10M9 12h10M9 16h10M4.99 8H5m-.02 4h.01m0 4H5"
+                        />
+                  </svg>
+                  Danh sách đăng ký công tác
+               </h2>
+               <div class="table-actions">
+                  <button class="btn btn-info btn-sm" onclick="exportExcel()">
+                     <svg
+                        class="w-6 h-6 text-gray-800 dark:text-white"
+                        aria-hidden="true"
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="24"
+                        height="24"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        >
+                        <path
+                           stroke="currentColor"
+                           stroke-linecap="round"
+                           stroke-linejoin="round"
+                           stroke-width="2"
+                           d="M19 10V4a1 1 0 0 0-1-1H9.914a1 1 0 0 0-.707.293L5.293 7.207A1 1 0 0 0 5 7.914V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2M10 3v4a1 1 0 0 1-1 1H5m5 6h9m0 0-2-2m2 2-2 2"
+                           />
+                     </svg>
+                     Export Excel
+                  </button>
+                  <button class="btn btn-success btn-sm" onclick="printMultiplePDF()">
+                     <svg
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                        >
+                        <path
+                           d="M19 8H5a2 2 0 0 0-2 2v6h4v3h10v-3h4v-6a2 2 0 0 0-2-2z"
+                           stroke="#FFFFFF"
+                           stroke-width="1.8"
+                           stroke-linecap="round"
+                           stroke-linejoin="round"
+                           />
+                        <rect
+                           x="7"
+                           y="3"
+                           width="10"
+                           height="5"
+                           rx="1"
+                           stroke="#FFFFFF"
+                           stroke-width="1.8"
+                           stroke-linecap="round"
+                           stroke-linejoin="round"
+                           />
+                        <path
+                           d="M8 14h8"
+                           stroke="#FFFFFF"
+                           stroke-width="1.8"
+                           stroke-linecap="round"
+                           />
+                     </svg>
+                     In nhiều PDF
+                  </button>
+                  <button class="btn btn-primary btn-sm" onclick="refreshData()">
+                     <svg
+                        class="w-6 h-6 text-gray-800 dark:text-white"
+                        aria-hidden="true"
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="24"
+                        height="24"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        >
+                        <path
+                           stroke="currentColor"
+                           stroke-linecap="round"
+                           stroke-linejoin="round"
+                           stroke-width="2"
+                           d="M17.651 7.65a7.131 7.131 0 0 0-12.68 3.15M18.001 4v4h-4m-7.652 8.35a7.13 7.13 0 0 0 12.68-3.15M6 20v-4h4"
+                           />
+                     </svg>
+                     Làm mới
+                  </button>
+               </div>
+            </div>
+            <!-- Filters -->
+            <div class="filters">
+               <div class="filter-item">
+                  <input
+                     type="text"
+                     id="searchInput"
+                     placeholder=" Tìm kiếm..."
+                     onkeyup="applyFilters()"
+                     />
+               </div>
+               <div class="filter-item">
+                  <select id="filterTrangThai" onchange="applyFilters()">
+                     <option value="">Tất cả trạng thái</option>
+                  </select>
+               </div>
+               <div class="filter-item">
+                  <select id="filterDiaDiem" onchange="applyFilters()">
+                     <option value="">Tất cả địa điểm</option>
+                  </select>
+               </div>
+               <div class="filter-item">
+                  <input type="date" id="filterFromDate" onchange="applyFilters()" />
+               </div>
+               <div class="filter-item">
+                  <input type="date" id="filterToDate" onchange="applyFilters()" />
+               </div>
+            </div>
+            <!-- Table -->
+            <div class="table-wrapper">
+               <table>
+                  <thead>
+                     <tr>
+                        <th>Mã ĐK</th>
+                        <th>Họ tên</th>
+                        <th>Chức vụ</th>
+                        <th>Địa điểm</th>
+                        <th>Ngày đến</th>
+                        <th>Ngày đi</th>
+                        <th>Trạng thái</th>
+                        <th>Thao tác</th>
+                     </tr>
+                  </thead>
+                  <tbody id="tableBody">
+                     <tr>
+                        <td colspan="8" class="text-center">Đang tải dữ liệu...</td>
+                     </tr>
+                  </tbody>
+               </table>
+            </div>
+            <!-- Pagination -->
+            <div class="pagination">
+               <div class="pagination-info" id="paginationInfo">
+                  Hiển thị 0 - 0 của 0 kết quả
+               </div>
+               <div class="pagination-controls">
+                  <button onclick="previousPage()" id="prevBtn">← Trước</button>
+                  <select id="pageSize" onchange="changePageSize()">
+                     <option value="10">10 dòng</option>
+                     <option value="20" selected>20 dòng</option>
+                     <option value="50">50 dòng</option>
+                     <option value="100">100 dòng</option>
+                  </select>
+                  <button onclick="nextPage()" id="nextBtn">Sau →</button>
+               </div>
+            </div>
+         </div>
+      </div>
+      <!-- Modal: View Detail -->
+      <div id="modalDetail" class="modal">
+         <div class="modal-content">
+            <div class="modal-header">
+               <h3>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                     <path
+                        d="M2 12C2 12 5 5 12 5C19 5 22 12 22 12C22 12 19 19 12 19C5 19 2 12 2 12Z"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        />
+                     <circle
+                        cx="12"
+                        cy="12"
+                        r="3"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                        />
+                  </svg>
+                  Chi tiết đăng ký
+               </h3>
+               <button class="close-btn" onclick="closeModal('modalDetail')">
+               &times;
+               </button>
+            </div>
+            <div class="modal-body" id="detailContent">
+               <!-- Content will be populated by JS -->
+            </div>
+            <div class="modal-footer">
+               <button class="btn btn-secondary" onclick="closeModal('modalDetail')">
+               Đóng
+               </button>
+            </div>
+         </div>
+      </div>
+      <!-- Modal: Edit -->
+      <div id="modalEdit" class="modal">
+         <div class="modal-content">
+            <div class="modal-header">
+               <h3>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                     <path
+                        d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        />
+                     <path
+                        d="M18.5 2.5C18.8978 2.10217 19.4374 1.87868 20 1.87868C20.5626 1.87868 21.1022 2.10217 21.5 2.5C21.8978 2.89782 22.1213 3.43739 22.1213 4C22.1213 4.56261 21.8978 5.10217 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        />
+                  </svg>
+                  Chỉnh sửa đăng ký
+               </h3>
+               <button class="close-btn" onclick="closeModal('modalEdit')">
+               &times;
+               </button>
+            </div>
+            <div class="modal-body">
+               <form id="editForm">
+                  <input type="hidden" id="editRowIndex" />
+                  <div class="form-grid">
+                     <div class="form-group">
+                        <label>Họ tên *</label>
+                        <input type="text" id="editHoTen" required />
+                     </div>
+                     <div class="form-group">
+                        <label>Chức vụ *</label>
+                        <select id="editChucVu" required></select>
+                     </div>
+                     <div class="form-group">
+                        <label>Loại phòng *</label>
+                        <select id="editPhongBan" required></select>
+                     </div>
+                     <div class="form-group">
+                        <label>Email *</label>
+                        <input type="email" id="editEmail" required />
+                     </div>
+                     <div class="form-group">
+                        <label>Ngày đến *</label>
+                        <input type="date" id="editNgayDen" required />
+                     </div>
+                     <div class="form-group">
+                        <label>Ngày đi *</label>
+                        <input type="date" id="editNgayDi" required />
+                     </div>
+                     <div class="form-group">
+                        <label>Phương tiện *</label>
+                        <select id="editPhuongTien" required></select>
+                     </div>
+                     <div class="form-group">
+                        <label>Địa điểm *</label>
+                        <select id="editDiaDiem" required></select>
+                     </div>
+                  </div>
+                  <div class="form-group">
+                     <label>Nhà ăn</label>
+                     <div class="checkbox-group" id="editNhaAnGroup"></div>
+                  </div>
+                  <div class="form-group">
+                     <label>Thông tin cần thiết</label>
+                     <textarea id="editThongTin"></textarea>
+                  </div>
+               </form>
+            </div>
+            <div class="modal-footer">
+               <button class="btn btn-secondary" onclick="closeModal('modalEdit')">
+               Hủy
+               </button>
+               <button class="btn btn-primary" onclick="submitEdit()">
+                  <svg width="32" height="32" viewBox="0 0 24 24" 
+                     fill="none" xmlns="http://www.w3.org/2000/svg">
+                     <path d="M5 3H15L19 7V21H5V3Z" 
+                        stroke="#FFFFFF" stroke-width="2" stroke-linejoin="round"/>
+                     <path d="M9 3V8H15V3"
+                        stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                     <rect x="8" y="13" width="8" height="6"
+                        stroke="#FFFFFF" stroke-width="2" rx="1"/>
+                  </svg>
+                  Lưu thay đổi
+               </button>
+            </div>
+         </div>
+      </div>
+      <!-- Modal: Approve -->
+      <div id="modalApprove" class="modal">
+         <div class="modal-content">
+            <div class="modal-header">
+               <h3>
+                  <svg width="32" height="32" viewBox="0 0 24 24"
+                     fill="none" xmlns="http://www.w3.org/2000/svg">
+                     <circle cx="12" cy="12" r="9" stroke="#FFFFFF" stroke-width="1.6"/>
+                     <path d="M8.5 12.5L11 15L15.5 9.5"
+                        stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  Duyệt đăng ký
+               </h3>
+               <button class="close-btn" onclick="closeModal('modalApprove')">
+               &times;
+               </button>
+            </div>
+            <div class="modal-body">
+               <input type="hidden" id="approveRowIndex" />
+               <div id="approveInfo" class="mb-20"></div>
+               <div class="form-group">
+                  <label>Ghi chú (tùy chọn)</label>
+                  <textarea
+                     id="approveNote"
+                     placeholder="Nhập ghi chú nếu cần..."
+                     ></textarea>
+               </div>
+            </div>
+            <div class="modal-footer">
+               <button
+                  class="btn btn-secondary"
+                  onclick="closeModal('modalApprove')"
+                  >
+               Hủy
+               </button>
+               <button class="btn btn-success" onclick="confirmApprove()">
+                  <svg width="32" height="32" viewBox="0 0 24 24"
+                     fill="none" xmlns="http://www.w3.org/2000/svg">
+                     <circle cx="12" cy="12" r="9" stroke="#FFFFFF" stroke-width="1.6"/>
+                     <path d="M8.5 12.5L11 15L15.5 9.5"
+                        stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  Xác nhận duyệt
+               </button>
+            </div>
+         </div>
+      </div>
+      <!-- Modal: Reject -->
+      <div id="modalReject" class="modal">
+         <div class="modal-content">
+            <div class="modal-header">
+               <h3>
+                  <svg width="32" height="32" viewBox="0 0 24 24"
+                     fill="none" xmlns="http://www.w3.org/2000/svg">
+                     <circle cx="12" cy="12" r="9"
+                        stroke="#FFFFFF" stroke-width="1.6"/>
+                     <path d="M9 9L15 15"
+                        stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round"/>
+                     <path d="M15 9L9 15"
+                        stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round"/>
+                  </svg>
+                  Từ chối đăng ký
+               </h3>
+               <button class="close-btn" onclick="closeModal('modalReject')">
+               &times;
+               </button>
+            </div>
+            <div class="modal-body">
+               <input type="hidden" id="rejectRowIndex" />
+               <div id="rejectInfo" class="mb-20"></div>
+               <div class="form-group">
+                  <label>Lý do từ chối *</label>
+                  <textarea
+                     id="rejectReason"
+                     placeholder="Vui lòng nhập lý do từ chối..."
+                     required
+                     ></textarea>
+               </div>
+            </div>
+            <div class="modal-footer">
+               <button class="btn btn-secondary" onclick="closeModal('modalReject')">
+               Hủy
+               </button>
+               <button class="btn btn-danger" onclick="confirmReject()">
+                  <svg width="32" height="32" viewBox="0 0 24 24"
+                     fill="none" xmlns="http://www.w3.org/2000/svg">
+                     <circle cx="12" cy="12" r="9"
+                        stroke="#FFFFFF" stroke-width="1.6"/>
+                     <path d="M9 9L15 15"
+                        stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round"/>
+                     <path d="M15 9L9 15"
+                        stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round"/>
+                  </svg>
+                  Xác nhận từ chối
+               </button>
+            </div>
+         </div>
+      </div>
+      <script>
+         // Global variables
+         let allData = [];
+         let filteredData = [];
+         let currentPage = 1;
+         let pageSize = 20;
+         let userInfo = {};
+         let danhMuc = {};
+         let timeChart, locationChart;
+         
+         // Initialize
+         document.addEventListener("DOMContentLoaded", function () {
+           init();
+         });
+         
+         async function init() {
+           showLoading();
+           updateLoadingText("Đang tải thông tin người dùng...");
+         
+           try {
+             // Phase 1: Load user info trước (bắt buộc cho phân quyền)
+             await loadUserInfo();
+             updateLoadingText("Đang tải danh mục và dữ liệu...");
+         
+             // Phase 2: Load song song NHƯNG ĐỢI KẾT QUẢ
+             const [danhMucResult, dataResult, statsResult] =
+               await Promise.allSettled([
+                 loadDanhMuc(),
+                 loadData(),
+                 loadStatistics(),
+               ]);
+         
+             // Kiểm tra kết quả
+             if (danhMucResult.status === "rejected") {
+               console.error("Lỗi load danh mục:", danhMucResult.reason);
+             }
+             if (dataResult.status === "rejected") {
+               console.error("Lỗi load dữ liệu:", dataResult.reason);
+             }
+         
+             updateLoadingText("Đang khởi tạo biểu đồ...");
+         
+             // Phase 3: Setup charts SAU KHI ĐÃ CÓ DỮ LIỆU
+             await new Promise((resolve) => setTimeout(resolve, 200)); // Đợi DOM render
+             setupCharts();
+         
+             // Phase 4: Nếu có dữ liệu thống kê, update charts
+             if (statsResult.status === "fulfilled" && statsResult.value) {
+               const statsData = statsResult.value;
+               if (statsData.success && statsData.data) {
+                 updateStatistics(statsData.data);
+                 updateCharts(statsData.data);
+               }
+             } else {
+               console.log("Không có dữ liệu thống kê, setup empty charts");
+               setupEmptyCharts();
+             }
+         
+             updateLoadingText("Hoàn tất!");
+           } catch (error) {
+             console.error("Lỗi khởi tạo:", error);
+             showToast("Lỗi khởi tạo: " + error.message, "error");
+           } finally {
+             setTimeout(() => {
+               hideLoading();
+             }, 300);
+           }
+         }
+         
+         function updateLoadingText(text) {
+           const loadingText = document.getElementById("loadingText");
+           if (loadingText) {
+             loadingText.textContent = text;
+           }
+         }
+         
+         // API Calls
+         function loadUserInfo() {
+           return new Promise((resolve, reject) => {
+             google.script.run
+               .withSuccessHandler(function (result) {
+                 if (result.success) {
+                   userInfo = result.data;
+                   document.getElementById("userName").textContent =
+                     userInfo.email.split("@")[0];
+                   document.getElementById("userRole").textContent = getRoleText(
+                     userInfo.role
+                   );
+                   document.getElementById("userAvatar").textContent =
+                     userInfo.email.charAt(0).toUpperCase();
+         
+                   // Áp dụng phân quyền UI
+                   applyPermissions();
+         
+                   resolve();
+                 } else {
+                   reject(new Error(result.error));
+                 }
+               })
+               .withFailureHandler(reject)
+               .getUserInfo();
+           });
+         }
+         
+         function loadDanhMuc() {
+           return new Promise((resolve, reject) => {
+             google.script.run
+               .withSuccessHandler(function (result) {
+                 if (result.success) {
+                   danhMuc = result.data;
+                   populateDropdowns();
+                   resolve();
+                 } else {
+                   reject(new Error(result.error));
+                 }
+               })
+               .withFailureHandler(reject)
+               .getDanhMuc();
+           });
+         }
+         
+         function loadData() {
+           return new Promise((resolve, reject) => {
+             const filters = getFilters();
+             google.script.run
+               .withSuccessHandler(function (result) {
+                 if (result.success) {
+                   allData = result.data;
+                   filteredData = allData;
+                   renderTable();
+                   resolve();
+                 } else {
+                   reject(new Error(result.error));
+                 }
+               })
+               .withFailureHandler(reject)
+               .getDangKyList(filters);
+           });
+         }
+         
+         function loadStatistics() {
+           return new Promise((resolve, reject) => {
+             google.script.run
+               .withSuccessHandler(function (result) {
+                 if (result.success) {
+                   console.log("Statistics loaded:", result.data);
+                   resolve(result); // Trả về result chứa data
+                 } else {
+                   console.error("Error loading statistics:", result.error);
+                   resolve({ success: false, data: null }); // Không reject, trả về empty
+                 }
+               })
+               .withFailureHandler(function (error) {
+                 console.error("Failed to load statistics:", error);
+                 resolve({ success: false, data: null }); // Không reject
+               })
+               .getThongKe();
+           });
+         }
+         
+         // Populate dropdowns
+         function populateDropdowns() {
+           // Chức vụ
+           populateSelect("chucVu", danhMuc.chucVu);
+           populateSelect("editChucVu", danhMuc.chucVu);
+         
+           // Loại phòng
+           populateSelect("phongBan", danhMuc.phongBan);
+           populateSelect("editPhongBan", danhMuc.phongBan);
+         
+           // Phương tiện
+           populateSelect("phuongTien", danhMuc.phuongTien);
+           populateSelect("editPhuongTien", danhMuc.phuongTien);
+         
+           // Địa điểm
+           populateSelect("diaDiem", danhMuc.diaDiem);
+           populateSelect("editDiaDiem", danhMuc.diaDiem);
+           populateSelect("filterDiaDiem", danhMuc.diaDiem);
+         
+           // Trạng thái filter
+           populateSelect("filterTrangThai", danhMuc.trangThai);
+         
+           // Nhà ăn checkboxes
+           populateCheckboxGroup("nhaAnGroup", danhMuc.nhaAn);
+           populateCheckboxGroup("editNhaAnGroup", danhMuc.nhaAn);
+         }
+         
+         function populateSelect(id, options) {
+           const select = document.getElementById(id);
+           if (!select) return;
+         
+           // Keep first option if it exists
+           const firstOption = select.options[0];
+           select.innerHTML = "";
+           if (firstOption) {
+             select.appendChild(firstOption);
+           }
+         
+           options.forEach((option) => {
+             const opt = document.createElement("option");
+             opt.value = option;
+             opt.textContent = option;
+             select.appendChild(opt);
+           });
+         }
+         
+         function populateCheckboxGroup(containerId, options) {
+           const container = document.getElementById(containerId);
+           if (!container) return;
+         
+           container.innerHTML = "";
+           options.forEach((option) => {
+             const div = document.createElement("div");
+             div.className = "checkbox-item";
+             div.innerHTML = `
+             <input type="checkbox" value="${option}" id="${containerId}_${option}">
+             <label for="${containerId}_${option}">${option}</label>
+           `;
+             container.appendChild(div);
+           });
+         }
+         
+         // Form handling
+         document
+           .getElementById("dangKyForm")
+           .addEventListener("submit", function (e) {
+             e.preventDefault();
+             submitForm();
+           });
+         
+         function submitForm() {
+           const formData = {
+             hoTen: document.getElementById("hoTen").value,
+             chucVu: document.getElementById("chucVu").value,
+             phongBan: document.getElementById("phongBan").value,
+             email: document.getElementById("email").value,
+             ngayDen: document.getElementById("ngayDen").value,
+             ngayDi: document.getElementById("ngayDi").value,
+             phuongTien: document.getElementById("phuongTien").value,
+             diaDiem: document.getElementById("diaDiem").value,
+             nhaAn: getCheckboxValues("nhaAnGroup"),
+             thongTin: document.getElementById("thongTin").value,
+           };
+         
+           showLoading();
+           google.script.run
+             .withSuccessHandler(function (result) {
+               hideLoading();
+               if (result.success) {
+                 showToast(result.message, "success");
+                 resetForm();
+                 refreshData();
+               } else {
+                 showToast(result.error, "error");
+               }
+             })
+             .withFailureHandler(function (error) {
+               hideLoading();
+               showToast("Lỗi: " + error.message, "error");
+             })
+             .submitDangKy(formData);
+         }
+         
+         function getCheckboxValues(containerId) {
+           const container = document.getElementById(containerId);
+           const checkboxes = container.querySelectorAll(
+             'input[type="checkbox"]:checked'
+           );
+           return Array.from(checkboxes).map((cb) => cb.value);
+         }
+         
+         function resetForm() {
+           document.getElementById("dangKyForm").reset();
+           // Uncheck all checkboxes
+           document
+             .querySelectorAll('#nhaAnGroup input[type="checkbox"]')
+             .forEach((cb) => (cb.checked = false));
+         }
+         
+         // Table rendering
+         function renderTable() {
+           const tbody = document.getElementById("tableBody");
+         
+           if (filteredData.length === 0) {
+             tbody.innerHTML =
+               '<tr><td colspan="8" class="text-center">Không có dữ liệu</td></tr>';
+             updatePagination();
+             return;
+           }
+         
+           const start = (currentPage - 1) * pageSize;
+           const end = start + pageSize;
+           const pageData = filteredData.slice(start, end);
+         
+           tbody.innerHTML = pageData
+             .map(
+               (row) => `
+           <tr>
+             <td><strong>${row.maDangKy}</strong></td>
+             <td>${row.hoTen}</td>
+             <td>${row.chucVu}</td>
+             <td>${row.diaDiem}</td>
+             <td>${row.ngayDen}</td>
+             <td>${row.ngayDi}</td>
+             <td>${getStatusBadge(row.trangThai)}</td>
+             <td>
+               <div class="action-buttons">
+                 ${getActionButtons(row)}
+               </div>
+             </td>
+           </tr>
+         `
+             )
+             .join("");
+         
+           updatePagination();
+         }
+         
+         function getStatusBadge(status) {
+         const statusMap = {
+         "Chờ duyệt": {
+         class: "status-pending",
+         icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;">
+                 <circle cx="12" cy="12" r="10" stroke="#856404" stroke-width="2"/>
+                 <path d="M12 6V12L16 14" stroke="#856404" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+               </svg>`,
+         },
+         "Đã duyệt": {
+         class: "status-approved",
+         icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;">
+                 <path d="M20 6L9 17L4 12" stroke="#155724" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+               </svg>`,
+         },
+         "Từ chối": {
+         class: "status-rejected",
+         icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;">
+                 <path d="M18 6L6 18M6 6L18 18" stroke="#721c24" stroke-width="2.5" stroke-linecap="round"/>
+               </svg>`,
+         },
+         };
+         const s = statusMap[status] || statusMap["Chờ duyệt"];
+         return `<span class="status-badge ${s.class}">${s.icon}${status}</span>`;
+         }
+         
+         function getActionButtons(row) {
+         let buttons = "";
+         
+         // SVG Icons - SỬ DỤNG currentColor
+         const icons = {
+         view: `<svg viewBox="0 0 24 24" fill="none">
+         <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+         <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+         </svg>`,
+         
+         approve: `<svg viewBox="0 0 24 24" fill="none">
+         <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+         </svg>`,
+         
+         reject: `<svg viewBox="0 0 24 24" fill="none">
+         <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+         </svg>`,
+         
+         edit: `<svg viewBox="0 0 24 24" fill="none">
+         <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+         <path d="M18.5 2.5C18.8978 2.10217 19.4374 1.87868 20 1.87868C20.5626 1.87868 21.1022 2.10217 21.5 2.5C21.8978 2.89782 22.1213 3.43739 22.1213 4C22.1213 4.56261 21.8978 5.10217 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+         </svg>`,
+         
+         print: `<svg viewBox="0 0 24 24" fill="none">
+         <path d="M6 9V2H18V9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+         <path d="M6 18H4C3.46957 18 2.96086 17.7893 2.58579 17.4142C2.21071 17.0391 2 16.5304 2 16V11C2 10.4696 2.21071 9.96086 2.58579 9.58579C2.96086 9.21071 3.46957 9 4 9H20C20.5304 9 21.0391 9.21071 21.4142 9.58579C21.7893 9.96086 22 10.4696 22 11V16C22 16.5304 21.7893 17.0391 21.4142 17.4142C21.0391 17.7893 20.5304 18 20 18H18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+         <rect x="6" y="14" width="12" height="8" rx="1" stroke="currentColor" stroke-width="2" fill="none"/>
+         </svg>`,
+         
+         delete: `<svg viewBox="0 0 24 24" fill="none">
+         <path d="M3 6H5H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+         <path d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+         </svg>`
+         };
+         
+         // View button - everyone can view
+         buttons += `<button class="action-btn action-btn-view" onclick="viewDetail(${row.rowIndex})" title="Xem chi tiết">${icons.view}</button>`;
+         
+         // Approve/Reject buttons
+         if (row.trangThai === "Chờ duyệt") {
+         if (userInfo.role === "Admin") {
+         buttons += `<button class="action-btn action-btn-approve" onclick="openApproveModal(${row.rowIndex}, '${row.maDangKy}')" title="Duyệt">${icons.approve}</button>`;
+         buttons += `<button class="action-btn action-btn-reject" onclick="openRejectModal(${row.rowIndex}, '${row.maDangKy}')" title="Từ chối">${icons.reject}</button>`;
+         } else if (userInfo.role === "Approver") {
+         const canApprove = userInfo.managedLocations.includes("Tất cả") || 
+                        userInfo.managedLocations.includes(row.diaDiem);
+         if (canApprove) {
+         buttons += `<button class="action-btn action-btn-approve" onclick="openApproveModal(${row.rowIndex}, '${row.maDangKy}')" title="Duyệt">${icons.approve}</button>`;
+         buttons += `<button class="action-btn action-btn-reject" onclick="openRejectModal(${row.rowIndex}, '${row.maDangKy}')" title="Từ chối">${icons.reject}</button>`;
+         }
+         }
+         }
+         
+         // Edit button
+         if (row.trangThai === "Chờ duyệt" && 
+         (userInfo.role === "Admin" || row.email === userInfo.email)) {
+         buttons += `<button class="action-btn action-btn-edit" onclick="openEditModal(${row.rowIndex})" title="Sửa">${icons.edit}</button>`;
+         }
+         
+         // Print PDF button
+         buttons += `<button class="action-btn action-btn-print" onclick="printPDF(${row.rowIndex})" title="In PDF">${icons.print}</button>`;
+         
+         // Delete button
+         if (row.trangThai === "Chờ duyệt" && 
+         (userInfo.role === "Admin" || row.email === userInfo.email)) {
+         buttons += `<button class="action-btn action-btn-delete" onclick="deleteRecord(${row.rowIndex}, '${row.maDangKy}')" title="Xóa">${icons.delete}</button>`;
+         }
+         
+         return buttons;
+         }
+         // CRUD Operations
+         function viewDetail(rowIndex) {
+           const row = allData.find((r) => r.rowIndex === rowIndex);
+           if (!row) return;
+         
+           const content = `
+           <table class="info-table" style="width: 100%; border-collapse: collapse;">
+             <tr><td style="padding: 10px; font-weight: 600; width: 40%;">Mã đăng ký:</td><td style="padding: 10px;">${
+               row.maDangKy
+             }</td></tr>
+             <tr><td style="padding: 10px; font-weight: 600;">Thời gian đăng ký:</td><td style="padding: 10px;">${
+               row.timestamp
+             }</td></tr>
+             <tr><td style="padding: 10px; font-weight: 600;">Họ tên:</td><td style="padding: 10px;"><strong>${
+               row.hoTen
+             }</strong></td></tr>
+             <tr><td style="padding: 10px; font-weight: 600;">Chức vụ:</td><td style="padding: 10px;">${
+               row.chucVu
+             }</td></tr>
+             <tr><td style="padding: 10px; font-weight: 600;">Loại phòng:</td><td style="padding: 10px;">${
+               row.phongBan
+             }</td></tr>
+             <tr><td style="padding: 10px; font-weight: 600;">Email:</td><td style="padding: 10px;">${
+               row.email
+             }</td></tr>
+             <tr><td style="padding: 10px; font-weight: 600;">Ngày đến:</td><td style="padding: 10px;">${
+               row.ngayDen
+             }</td></tr>
+             <tr><td style="padding: 10px; font-weight: 600;">Ngày đi:</td><td style="padding: 10px;">${
+               row.ngayDi
+             }</td></tr>
+             <tr><td style="padding: 10px; font-weight: 600;">Phương tiện:</td><td style="padding: 10px;">${
+               row.phuongTien
+             }</td></tr>
+             <tr><td style="padding: 10px; font-weight: 600;">Nhà ăn:</td><td style="padding: 10px;">${
+               row.nhaAn || "Không"
+             }</td></tr>
+             <tr><td style="padding: 10px; font-weight: 600;">Địa điểm:</td><td style="padding: 10px;"><strong>${
+               row.diaDiem
+             }</strong></td></tr>
+             <tr><td style="padding: 10px; font-weight: 600;">Thông tin:</td><td style="padding: 10px;">${
+               row.thongTin || "Không có"
+             }</td></tr>
+             <tr><td style="padding: 10px; font-weight: 600;">Trạng thái:</td><td style="padding: 10px;">${getStatusBadge(
+               row.trangThai
+             )}</td></tr>
+             ${
+               row.nguoiDuyet
+                 ? `<tr><td style="padding: 10px; font-weight: 600;">Người duyệt:</td><td style="padding: 10px;">${row.nguoiDuyet}</td></tr>`
+                 : ""
+             }
+             ${
+               row.ngayDuyet
+                 ? `<tr><td style="padding: 10px; font-weight: 600;">Ngày duyệt:</td><td style="padding: 10px;">${row.ngayDuyet}</td></tr>`
+                 : ""
+             }
+             ${
+               row.lyDoTuChoi
+                 ? `<tr><td style="padding: 10px; font-weight: 600;">Lý do từ chối:</td><td style="padding: 10px; color: #f44336;">${row.lyDoTuChoi}</td></tr>`
+                 : ""
+             }
+           </table>
+         `;
+         
+           document.getElementById("detailContent").innerHTML = content;
+           openModal("modalDetail");
+         }
+         
+         function openEditModal(rowIndex) {
+           const row = allData.find((r) => r.rowIndex === rowIndex);
+           if (!row) return;
+         
+           // Kiểm tra quyền sửa
+           if (row.trangThai !== "Chờ duyệt") {
+             showToast("Chỉ có thể sửa đăng ký đang chờ duyệt", "error");
+             return;
+           }
+         
+           if (userInfo.role !== "Admin" && row.email !== userInfo.email) {
+             showToast("Bạn chỉ có thể sửa đăng ký của mình", "error");
+             return;
+           }
+         
+           document.getElementById("editRowIndex").value = rowIndex;
+           document.getElementById("editHoTen").value = row.hoTen;
+           document.getElementById("editChucVu").value = row.chucVu;
+           document.getElementById("editPhongBan").value = row.phongBan;
+           document.getElementById("editEmail").value = row.email;
+           document.getElementById("editNgayDen").value = convertDateFormat(
+             row.ngayDen
+           );
+           document.getElementById("editNgayDi").value = convertDateFormat(
+             row.ngayDi
+           );
+           document.getElementById("editPhuongTien").value = row.phuongTien;
+           document.getElementById("editDiaDiem").value = row.diaDiem;
+           document.getElementById("editThongTin").value = row.thongTin || "";
+         
+           // Set checkboxes
+           const nhaAnArray = row.nhaAn ? row.nhaAn.split(", ") : [];
+           document
+             .querySelectorAll('#editNhaAnGroup input[type="checkbox"]')
+             .forEach((cb) => {
+               cb.checked = nhaAnArray.includes(cb.value);
+             });
+         
+           openModal("modalEdit");
+         }
+         
+         function submitEdit() {
+           const rowIndex = parseInt(
+             document.getElementById("editRowIndex").value
+           );
+           const formData = {
+             hoTen: document.getElementById("editHoTen").value,
+             chucVu: document.getElementById("editChucVu").value,
+             phongBan: document.getElementById("editPhongBan").value,
+             email: document.getElementById("editEmail").value,
+             ngayDen: document.getElementById("editNgayDen").value,
+             ngayDi: document.getElementById("editNgayDi").value,
+             phuongTien: document.getElementById("editPhuongTien").value,
+             diaDiem: document.getElementById("editDiaDiem").value,
+             nhaAn: getCheckboxValues("editNhaAnGroup"),
+             thongTin: document.getElementById("editThongTin").value,
+           };
+         
+           showLoading();
+           google.script.run
+             .withSuccessHandler(function (result) {
+               hideLoading();
+               if (result.success) {
+                 showToast(result.message, "success");
+                 closeModal("modalEdit");
+                 refreshData();
+               } else {
+                 showToast(result.error, "error");
+               }
+             })
+             .withFailureHandler(function (error) {
+               hideLoading();
+               showToast("Lỗi: " + error.message, "error");
+             })
+             .updateDangKy(rowIndex, formData);
+         }
+         
+         function deleteRecord(rowIndex, maDangKy) {
+           const row = allData.find((r) => r.rowIndex === rowIndex);
+           if (!row) return;
+         
+           // Kiểm tra quyền xóa
+           if (row.trangThai !== "Chờ duyệt") {
+             showToast("Chỉ có thể xóa đăng ký đang chờ duyệt", "error");
+             return;
+           }
+         
+           if (userInfo.role !== "Admin" && row.email !== userInfo.email) {
+             showToast("Bạn chỉ có thể xóa đăng ký của mình", "error");
+             return;
+           }
+         
+           if (!confirm(`Bạn có chắc chắn muốn xóa đăng ký ${maDangKy}?`)) return;
+         
+           showLoading();
+           google.script.run
+             .withSuccessHandler(function (result) {
+               hideLoading();
+               if (result.success) {
+                 showToast(result.message, "success");
+                 refreshData();
+               } else {
+                 showToast(result.error, "error");
+               }
+             })
+             .withFailureHandler(function (error) {
+               hideLoading();
+               showToast("Lỗi: " + error.message, "error");
+             })
+             .deleteDangKy(rowIndex);
+         }
+         
+         // Approve/Reject
+         function openApproveModal(rowIndex, maDangKy) {
+           const row = allData.find((r) => r.rowIndex === rowIndex);
+           if (!row) return;
+         
+           // Kiểm tra quyền duyệt
+           if (userInfo.role === "Approver") {
+             const canApprove =
+               userInfo.managedLocations.includes("Tất cả") ||
+               userInfo.managedLocations.includes(row.diaDiem);
+             if (!canApprove) {
+               showToast(
+                 `Bạn không có quyền duyệt địa điểm "${row.diaDiem}"`,
+                 "error"
+               );
+               return;
+             }
+           } else if (userInfo.role === "User") {
+             showToast("Bạn không có quyền duyệt đăng ký", "error");
+             return;
+           }
+         
+           document.getElementById("approveRowIndex").value = rowIndex;
+           document.getElementById("approveInfo").innerHTML = `
+           <div style="padding: 15px; background: #f0f9f5; border-radius: 8px;">
+             <p><strong>Mã đăng ký:</strong> ${maDangKy}</p>
+             <p><strong>Người đăng ký:</strong> ${row.hoTen} - ${row.chucVu}</p>
+             <p><strong>Địa điểm:</strong> ${row.diaDiem}</p>
+             <p><strong>Thời gian:</strong> ${row.ngayDen} - ${row.ngayDi}</p>
+           </div>
+         `;
+           openModal("modalApprove");
+         }
+         
+         function confirmApprove() {
+           const rowIndex = parseInt(
+             document.getElementById("approveRowIndex").value
+           );
+           const note = document.getElementById("approveNote").value;
+         
+           showLoading();
+           google.script.run
+             .withSuccessHandler(function (result) {
+               hideLoading();
+               if (result.success) {
+                 showToast(result.message, "success");
+                 closeModal("modalApprove");
+                 document.getElementById("approveNote").value = "";
+                 refreshData();
+               } else {
+                 showToast(result.error, "error");
+               }
+             })
+             .withFailureHandler(function (error) {
+               hideLoading();
+               showToast("Lỗi: " + error.message, "error");
+             })
+             .approveDangKy(rowIndex, note);
+         }
+         
+         function openRejectModal(rowIndex, maDangKy) {
+           const row = allData.find((r) => r.rowIndex === rowIndex);
+           if (!row) return;
+         
+           // Kiểm tra quyền từ chối
+           if (userInfo.role === "Approver") {
+             const canReject =
+               userInfo.managedLocations.includes("Tất cả") ||
+               userInfo.managedLocations.includes(row.diaDiem);
+             if (!canReject) {
+               showToast(
+                 `Bạn không có quyền từ chối địa điểm "${row.diaDiem}"`,
+                 "error"
+               );
+               return;
+             }
+           } else if (userInfo.role === "User") {
+             showToast("Bạn không có quyền từ chối đăng ký", "error");
+             return;
+           }
+         
+           document.getElementById("rejectRowIndex").value = rowIndex;
+           document.getElementById("rejectInfo").innerHTML = `
+           <div style="padding: 15px; background: #fff3e0; border-radius: 8px;">
+             <p><strong>Mã đăng ký:</strong> ${maDangKy}</p>
+             <p><strong>Người đăng ký:</strong> ${row.hoTen} - ${row.chucVu}</p>
+             <p><strong>Địa điểm:</strong> ${row.diaDiem}</p>
+           </div>
+         `;
+           openModal("modalReject");
+         }
+         
+         function confirmReject() {
+           const rowIndex = parseInt(
+             document.getElementById("rejectRowIndex").value
+           );
+           const reason = document.getElementById("rejectReason").value;
+         
+           if (!reason || reason.trim() === "") {
+             showToast("Vui lòng nhập lý do từ chối!", "error");
+             return;
+           }
+         
+           showLoading();
+           google.script.run
+             .withSuccessHandler(function (result) {
+               hideLoading();
+               if (result.success) {
+                 showToast(result.message, "success");
+                 closeModal("modalReject");
+                 document.getElementById("rejectReason").value = "";
+                 refreshData();
+               } else {
+                 showToast(result.error, "error");
+               }
+             })
+             .withFailureHandler(function (error) {
+               hideLoading();
+               showToast("Lỗi: " + error.message, "error");
+             })
+             .rejectDangKy(rowIndex, reason);
+         }
+         
+         // Export Excel
+         function exportExcel() {
+           if (filteredData.length === 0) {
+             showToast("Không có dữ liệu để export!", "error");
+             return;
+           }
+         
+           showLoading();
+         
+           // Prepare data for export
+           const exportData = filteredData.map((row) => ({
+             "Mã ĐK": row.maDangKy,
+             "Ngày đăng ký": row.timestamp,
+             "Họ tên": row.hoTen,
+             "Chức vụ": row.chucVu,
+             "Loại phòng": row.phongBan,
+             Email: row.email,
+             "Ngày đến": row.ngayDen,
+             "Ngày đi": row.ngayDi,
+             "Phương tiện": row.phuongTien,
+             "Nhà ăn": row.nhaAn,
+             "Địa điểm": row.diaDiem,
+             "Thông tin": row.thongTin,
+             "Trạng thái": row.trangThai,
+             "Người duyệt": row.nguoiDuyet || "",
+             "Ngày duyệt": row.ngayDuyet || "",
+             "Lý do từ chối": row.lyDoTuChoi || "",
+           }));
+         
+           // Create workbook
+           const wb = XLSX.utils.book_new();
+           const ws = XLSX.utils.json_to_sheet(exportData);
+         
+           // Style header
+           const range = XLSX.utils.decode_range(ws["!ref"]);
+           for (let C = range.s.c; C <= range.e.c; ++C) {
+             const address = XLSX.utils.encode_col(C) + "1";
+             if (!ws[address]) continue;
+             ws[address].s = {
+               fill: { fgColor: { rgb: "00A86B" } },
+               font: { bold: true, color: { rgb: "FFFFFF" } },
+             };
+           }
+         
+           // Auto-size columns
+           const colWidths = [];
+           for (let C = range.s.c; C <= range.e.c; ++C) {
+             let maxWidth = 10;
+             for (let R = range.s.r; R <= range.e.r; ++R) {
+               const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
+               if (cell && cell.v) {
+                 const cellWidth = cell.v.toString().length;
+                 if (cellWidth > maxWidth) maxWidth = cellWidth;
+               }
+             }
+             colWidths.push({ wch: Math.min(maxWidth + 2, 50) });
+           }
+           ws["!cols"] = colWidths;
+         
+           XLSX.utils.book_append_sheet(wb, ws, "Danh sách công tác");
+         
+           // Generate filename
+           const now = new Date();
+           const filename = `DanhSachCongTac_${now.getFullYear()}${(
+             now.getMonth() + 1
+           )
+             .toString()
+             .padStart(2, "0")}${now.getDate().toString().padStart(2, "0")}.xlsx`;
+         
+           // Download
+           XLSX.writeFile(wb, filename);
+         
+           hideLoading();
+           showToast(`Đã export ${filteredData.length} dòng dữ liệu!`, "success");
+         }
+         
+         // Print PDF
+         function printPDF(rowIndex) {
+           const row = allData.find((r) => r.rowIndex === rowIndex);
+           if (!row) return;
+         
+           showLoading();
+         
+           const { jsPDF } = window.jspdf;
+           const doc = new jsPDF();
+         
+          
+           doc.setFont("cambria");
+         
+           let y = 20;
+         
+           // Header with company name
+           doc.setFontSize(18);
+           doc.setTextColor(0, 104, 43); // THACO green
+           doc.text("THACO AGRI KLH SNUOL", 105, y, { align: "center" });
+         
+           y += 10;
+           doc.setFontSize(14);
+           doc.text("PHIEU DANG KY CONG TAC", 105, y, { align: "center" });
+         
+           y += 5;
+           doc.setFontSize(10);
+           doc.setTextColor(100);
+           doc.text(`Ma: ${row.maDangKy}`, 105, y, { align: "center" });
+         
+           // Green line separator
+           y += 10;
+           doc.setDrawColor(0, 104, 43);
+           doc.setLineWidth(0.5);
+           doc.line(20, y, 190, y);
+         
+           // Content section
+           y += 15;
+           doc.setFontSize(11);
+           doc.setTextColor(0);
+         
+           const addField = (label, value) => {
+             doc.setFont("helvetica", "bold");
+             doc.text(label + ":", 25, y);
+             doc.setFont("helvetica", "normal");
+             // Convert Vietnamese characters to ASCII-safe version
+             const safeValue = convertToAscii(value || "");
+             doc.text(safeValue, 70, y);
+             y += 8;
+           };
+         
+           addField("Ho ten", row.hoTen);
+           addField("Chuc vu", row.chucVu);
+           addField("Phong ban", row.phongBan);
+           addField("Email", row.email);
+         
+           y += 3;
+           addField("Ngay den", row.ngayDen);
+           addField("Ngay di", row.ngayDi);
+           addField("Dia diem", row.diaDiem);
+           addField("Phuong tien", row.phuongTien);
+           addField("Nha an", row.nhaAn || "Khong");
+         
+           if (row.thongTin) {
+             y += 3;
+             doc.setFont("helvetica", "bold");
+             doc.text("Thong tin:", 25, y);
+             y += 6;
+             doc.setFont("helvetica", "normal");
+             const safeThongTin = convertToAscii(row.thongTin);
+             const lines = doc.splitTextToSize(safeThongTin, 160);
+             doc.text(lines, 25, y);
+             y += lines.length * 6;
+           }
+         
+           // Status section
+           y += 10;
+           doc.setLineWidth(0.5);
+           doc.line(20, y, 190, y);
+           y += 10;
+         
+           doc.setFont("helvetica", "bold");
+           doc.text("Trang thai:", 25, y);
+           doc.setFont("helvetica", "normal");
+         
+           // Color based on status
+           const statusMap = {
+             "Đã duyệt": { color: [0, 128, 0], text: "Da duyet" },
+             "Từ chối": { color: [255, 0, 0], text: "Tu choi" },
+             "Chờ duyệt": { color: [255, 152, 0], text: "Cho duyet" },
+           };
+         
+           const status = statusMap[row.trangThai] || {
+             color: [0, 0, 0],
+             text: row.trangThai,
+           };
+           doc.setTextColor(...status.color);
+           doc.text(status.text, 70, y);
+           doc.setTextColor(0);
+         
+           if (row.nguoiDuyet) {
+             y += 8;
+             doc.text(`Nguoi duyet: ${convertToAscii(row.nguoiDuyet)}`, 25, y);
+           }
+           if (row.ngayDuyet) {
+             y += 8;
+             doc.text(`Ngay duyet: ${row.ngayDuyet}`, 25, y);
+           }
+         
+           // Footer
+           y = 270;
+           doc.setFontSize(9);
+           doc.setTextColor(150);
+           doc.text("He thong quan ly cong tac - THACO AGRI KLH SNUOL", 105, y, {
+             align: "center",
+           });
+           const now = new Date();
+           const dateStr = `${now.getDate()}/${
+             now.getMonth() + 1
+           }/${now.getFullYear()} ${now.getHours()}:${now.getMinutes()}`;
+           doc.text(`In ngay: ${dateStr}`, 105, y + 5, { align: "center" });
+         
+           // Save with proper filename
+           doc.save(`PhieuCongTac_${row.maDangKy}.pdf`);
+         
+           hideLoading();
+           showToast("Đã tạo file PDF!", "success");
+         }
+         
+         // Helper function to convert Vietnamese to ASCII
+         function convertToAscii(str) {
+           if (!str) return "";
+         
+           const vietnameseMap = {
+             à: "a",
+             á: "a",
+             ả: "a",
+             ã: "a",
+             ạ: "a",
+             ă: "a",
+             ằ: "a",
+             ắ: "a",
+             ẳ: "a",
+             ẵ: "a",
+             ặ: "a",
+             â: "a",
+             ầ: "a",
+             ấ: "a",
+             ẩ: "a",
+             ẫ: "a",
+             ậ: "a",
+             đ: "d",
+             è: "e",
+             é: "e",
+             ẻ: "e",
+             ẽ: "e",
+             ẹ: "e",
+             ê: "e",
+             ề: "e",
+             ế: "e",
+             ể: "e",
+             ễ: "e",
+             ệ: "e",
+             ì: "i",
+             í: "i",
+             ỉ: "i",
+             ĩ: "i",
+             ị: "i",
+             ò: "o",
+             ó: "o",
+             ỏ: "o",
+             õ: "o",
+             ọ: "o",
+             ô: "o",
+             ồ: "o",
+             ố: "o",
+             ổ: "o",
+             ỗ: "o",
+             ộ: "o",
+             ơ: "o",
+             ờ: "o",
+             ớ: "o",
+             ở: "o",
+             ỡ: "o",
+             ợ: "o",
+             ù: "u",
+             ú: "u",
+             ủ: "u",
+             ũ: "u",
+             ụ: "u",
+             ư: "u",
+             ừ: "u",
+             ứ: "u",
+             ử: "u",
+             ữ: "u",
+             ự: "u",
+             ỳ: "y",
+             ý: "y",
+             ỷ: "y",
+             ỹ: "y",
+             ỵ: "y",
+             À: "A",
+             Á: "A",
+             Ả: "A",
+             Ã: "A",
+             Ạ: "A",
+             Ă: "A",
+             Ằ: "A",
+             Ắ: "A",
+             Ẳ: "A",
+             Ẵ: "A",
+             Ặ: "A",
+             Â: "A",
+             Ầ: "A",
+             Ấ: "A",
+             Ẩ: "A",
+             Ẫ: "A",
+             Ậ: "A",
+             Đ: "D",
+             È: "E",
+             É: "E",
+             Ẻ: "E",
+             Ẽ: "E",
+             Ẹ: "E",
+             Ê: "E",
+             Ề: "E",
+             Ế: "E",
+             Ể: "E",
+             Ễ: "E",
+             Ệ: "E",
+             Ì: "I",
+             Í: "I",
+             Ỉ: "I",
+             Ĩ: "I",
+             Ị: "I",
+             Ò: "O",
+             Ó: "O",
+             Ỏ: "O",
+             Õ: "O",
+             Ọ: "O",
+             Ô: "O",
+             Ồ: "O",
+             Ố: "O",
+             Ổ: "O",
+             Ỗ: "O",
+             Ộ: "O",
+             Ơ: "O",
+             Ờ: "O",
+             Ớ: "O",
+             Ở: "O",
+             Ỡ: "O",
+             Ợ: "O",
+             Ù: "U",
+             Ú: "U",
+             Ủ: "U",
+             Ũ: "U",
+             Ụ: "U",
+             Ư: "U",
+             Ừ: "U",
+             Ứ: "U",
+             Ử: "U",
+             Ữ: "U",
+             Ự: "U",
+             Ỳ: "Y",
+             Ý: "Y",
+             Ỷ: "Y",
+             Ỹ: "Y",
+             Ỵ: "Y",
+           };
+         
+           return str
+             .split("")
+             .map((char) => vietnameseMap[char] || char)
+             .join("");
+         }
+         
+         function printMultiplePDF() {
+           if (filteredData.length === 0) {
+             showToast("Không có dữ liệu để in!", "error");
+             return;
+           }
+         
+           if (!confirm(`Bạn muốn in PDF cho ${filteredData.length} đăng ký?`))
+             return;
+         
+           showLoading();
+         
+           // In từng PDF
+           filteredData.slice(0, 10).forEach((row, index) => {
+             setTimeout(() => {
+               printPDF(row.rowIndex);
+             }, index * 500);
+           });
+         
+           setTimeout(() => {
+             hideLoading();
+             if (filteredData.length > 10) {
+               showToast(`Đã in 10 PDF đầu tiên!`, "info");
+             }
+           }, filteredData.length * 500);
+         }
+         
+         // Filters
+         function getFilters() {
+           return {
+             search: document.getElementById("searchInput").value,
+             trangThai: document.getElementById("filterTrangThai").value,
+             diaDiem: document.getElementById("filterDiaDiem").value,
+             fromDate: document.getElementById("filterFromDate").value,
+             toDate: document.getElementById("filterToDate").value,
+           };
+         }
+         
+         function applyFilters() {
+           const filters = getFilters();
+         
+           filteredData = allData.filter((row) => {
+             // Search
+             if (filters.search) {
+               const searchLower = filters.search.toLowerCase();
+               const searchFields = [
+                 row.maDangKy,
+                 row.hoTen,
+                 row.email,
+                 row.diaDiem,
+                 row.phongBan,
+               ].map((f) => (f || "").toLowerCase());
+         
+               if (!searchFields.some((f) => f.includes(searchLower))) {
+                 return false;
+               }
+             }
+         
+             // Status filter
+             if (filters.trangThai && row.trangThai !== filters.trangThai) {
+               return false;
+             }
+         
+             // Location filter
+             if (filters.diaDiem && row.diaDiem !== filters.diaDiem) {
+               return false;
+             }
+         
+             // Date filters
+             if (filters.fromDate) {
+               const rowDate = convertDateFormat(row.ngayDen);
+               if (rowDate < filters.fromDate) return false;
+             }
+             if (filters.toDate) {
+               const rowDate = convertDateFormat(row.ngayDen);
+               if (rowDate > filters.toDate) return false;
+             }
+         
+             return true;
+           });
+         
+           currentPage = 1;
+           renderTable();
+         }
+         
+         // Pagination
+         function updatePagination() {
+           const total = filteredData.length;
+           const start = (currentPage - 1) * pageSize + 1;
+           const end = Math.min(start + pageSize - 1, total);
+         
+           document.getElementById(
+             "paginationInfo"
+           ).textContent = `Hiển thị ${start} - ${end} của ${total} kết quả`;
+         
+           document.getElementById("prevBtn").disabled = currentPage === 1;
+           document.getElementById("nextBtn").disabled = end >= total;
+         }
+         
+         function previousPage() {
+           if (currentPage > 1) {
+             currentPage--;
+             renderTable();
+           }
+         }
+         
+         function nextPage() {
+           const maxPage = Math.ceil(filteredData.length / pageSize);
+           if (currentPage < maxPage) {
+             currentPage++;
+             renderTable();
+           }
+         }
+         
+         function changePageSize() {
+           pageSize = parseInt(document.getElementById("pageSize").value);
+           currentPage = 1;
+           renderTable();
+         }
+         
+         function setupCharts() {
+           try {
+             // Destroy existing charts nếu có
+             if (timeChart) {
+               timeChart.destroy();
+               timeChart = null;
+             }
+             if (locationChart) {
+               locationChart.destroy();
+               locationChart = null;
+             }
+         
+             // Time chart
+             const timeCtx = document.getElementById("timeChart");
+             if (!timeCtx) {
+               console.error("❌ Không tìm thấy timeChart canvas");
+               return;
+             }
+         
+             console.log("✅ Setting up timeChart...");
+             timeChart = new Chart(timeCtx.getContext("2d"), {
+               type: "bar",
+               data: {
+                 labels: ["T1", "T2", "T3", "T4", "T5", "T6"],
+                 datasets: [
+                   {
+                     label: "Số lượng đăng ký",
+                     data: [0, 0, 0, 0, 0, 0],
+                     backgroundColor: "rgba(0, 104, 43, 0.8)",
+                     borderColor: "rgba(0, 104, 43, 1)",
+                     borderWidth: 2,
+                     borderRadius: 8,
+                   },
+                 ],
+               },
+               options: {
+                 responsive: true,
+                 maintainAspectRatio: true,
+                 animation: {
+                   duration: 800,
+                   easing: "easeInOutQuart",
+                 },
+                 plugins: {
+                   legend: { display: false },
+                 },
+                 scales: {
+                   y: {
+                     beginAtZero: true,
+                     grid: {
+                       color: "rgba(0, 0, 0, 0.05)",
+                     },
+                   },
+                   x: {
+                     grid: {
+                       display: false,
+                     },
+                   },
+                 },
+               },
+             });
+             console.log("✅ timeChart initialized");
+         
+             // Location chart
+             const locationCtx = document.getElementById("locationChart");
+             if (!locationCtx) {
+               console.error("❌ Không tìm thấy locationChart canvas");
+               return;
+             }
+         
+             console.log("✅ Setting up locationChart...");
+             locationChart = new Chart(locationCtx.getContext("2d"), {
+               type: "doughnut",
+               data: {
+                 labels: [
+                   "Văn phòng 55",
+                   "Bình Phước 1",
+                   "Bình Phước 2",
+                   "ERC",
+                   "Xi nghiệp Bò",
+                 ],
+                 datasets: [
+                   {
+                     data: [0, 0, 0, 0, 0],
+                     backgroundColor: [
+                       "#00682B",
+                       "#FFFBD5",
+                       "#ff9800",
+                       "#4caf50",
+                       "#2196f3",
+                     ],
+                     borderWidth: 2,
+                     borderColor: "#fff",
+                   },
+                 ],
+               },
+               options: {
+                 responsive: true,
+                 maintainAspectRatio: true,
+                 animation: {
+                   duration: 1000,
+                   easing: "easeInOutQuart",
+                 },
+                 plugins: {
+                   legend: {
+                     position: "bottom",
+                     labels: {
+                       padding: 15,
+                       font: {
+                         size: 12,
+                       },
+                     },
+                   },
+                 },
+               },
+             });
+             console.log("✅ locationChart initialized");
+           } catch (error) {
+             console.error("❌ Error in setupCharts:", error);
+           }
+         }
+         function updateStatistics(stats) {
+           if (!stats) {
+             document.getElementById("statTotal").textContent = "0";
+             document.getElementById("statMonth").textContent = "0";
+             document.getElementById("statPending").textContent = "0";
+             document.getElementById("statApproved").textContent = "0";
+             return;
+           }
+         
+           document.getElementById("statTotal").textContent = stats.tongSo || 0;
+           document.getElementById("statMonth").textContent = stats.thangNay || 0;
+           document.getElementById("statPending").textContent =
+             stats.choDuyet || 0;
+           document.getElementById("statApproved").textContent =
+             stats.daDuyet || 0;
+         }
+         
+         function updateCharts(stats) {
+         console.log('updateCharts called with:', stats);
+         
+         // Safety check
+         if (!stats || !stats.theoDiaDiem) {
+         console.log('Invalid chart data, using empty charts');
+         setupEmptyCharts();
+         return;
+         }
+         
+         if (!timeChart || !locationChart) {
+         console.log('Charts not initialized yet, waiting...');
+         // Retry after 500ms
+         setTimeout(() => updateCharts(stats), 500);
+         return;
+         }
+         
+         try {
+         console.log('Updating location chart...');
+         // Update location chart
+         const locations = Object.keys(stats.theoDiaDiem);
+         const locationData = Object.values(stats.theoDiaDiem);
+         
+         locationChart.data.labels = locations;
+         locationChart.data.datasets[0].data = locationData;
+         locationChart.update();
+         console.log('Location chart updated');
+         
+         console.log('Updating time chart...');
+         // Time chart - calculate last 6 months data
+         const months = [];
+         const monthData = [];
+         const now = new Date();
+         
+         for (let i = 5; i >= 0; i--) {
+         const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+         months.push(`T${d.getMonth() + 1}/${d.getFullYear()}`);
+         
+         // Count registrations in this month
+         const count = allData.filter(row => {
+           if (!row.timestamp) return false;
+           
+           // Parse Vietnamese date format: dd/MM/yyyy HH:mm:ss
+           const rowDate = parseVietnameseDate(row.timestamp);
+           if (!rowDate) return false;
+           
+           return rowDate.getMonth() === d.getMonth() && 
+                  rowDate.getFullYear() === d.getFullYear();
+         }).length;
+         
+         monthData.push(count);
+         console.log(`   Tháng ${d.getMonth() + 1}/${d.getFullYear()}: ${count} đăng ký`);
+         }
+         
+         timeChart.data.labels = months;
+         timeChart.data.datasets[0].data = monthData;
+         timeChart.update();
+         console.log('Time chart updated with data:', monthData);
+         
+         } catch (error) {
+         console.error('Error updating charts:', error);
+         setupEmptyCharts();
+         }
+         }
+         
+         
+         function parseVietnameseDate(dateStr) {
+         if (!dateStr) return null;
+         
+         try {
+         // Format: dd/MM/yyyy HH:mm:ss hoặc dd/MM/yyyy
+         const parts = dateStr.split(' ');
+         const dateParts = parts[0].split('/');
+         
+         if (dateParts.length !== 3) return null;
+         
+         const day = parseInt(dateParts[0], 10);
+         const month = parseInt(dateParts[1], 10) - 1; // Month is 0-indexed
+         const year = parseInt(dateParts[2], 10);
+         
+         // Parse time if exists
+         let hour = 0, minute = 0, second = 0;
+         if (parts.length > 1 && parts[1]) {
+         const timeParts = parts[1].split(':');
+         hour = parseInt(timeParts[0], 10) || 0;
+         minute = parseInt(timeParts[1], 10) || 0;
+         second = parseInt(timeParts[2], 10) || 0;
+         }
+         
+         const date = new Date(year, month, day, hour, minute, second);
+         
+         // Validate date
+         if (isNaN(date.getTime())) return null;
+         
+         return date;
+         } catch (error) {
+         console.error('Error parsing date:', dateStr, error);
+         return null;
+         }
+         }
+         
+         
+         function setupEmptyCharts() {
+           if (!timeChart || !locationChart) {
+             return; // Charts not initialized yet
+           }
+         
+           // Empty time chart
+           timeChart.data.labels = ["T1", "T2", "T3", "T4", "T5", "T6"];
+           timeChart.data.datasets[0].data = [0, 0, 0, 0, 0, 0];
+           timeChart.update();
+         
+           // Empty location chart
+           locationChart.data.labels = [
+             "Văn phòng 55",
+             "Bình Phước 1",
+             "Bình Phước 2",
+             "ERC",
+             "Xi nghiệp Bò",
+           ];
+           locationChart.data.datasets[0].data = [0, 0, 0, 0, 0];
+           locationChart.update();
+         }
+         
+         // Helpers
+         function toggleForm() {
+           const content = document.getElementById("formContent");
+           const icon = document.getElementById("toggleIcon");
+         
+           if (content.classList.contains("expanded")) {
+             content.classList.remove("expanded");
+             icon.classList.remove("rotated");
+           } else {
+             content.classList.add("expanded");
+             icon.classList.add("rotated");
+           }
+         }
+         
+         function refreshData() {
+           init();
+         }
+         
+         function openModal(modalId) {
+           document.getElementById(modalId).classList.add("active");
+         }
+         
+         function closeModal(modalId) {
+           document.getElementById(modalId).classList.remove("active");
+         }
+         
+         function showLoading() {
+           document.getElementById("loading").classList.add("active");
+         }
+         
+         function hideLoading() {
+           document.getElementById("loading").classList.remove("active");
+         }
+         
+         function showToast(message, type = "info") {
+           const toast = document.getElementById("toast");
+           toast.textContent = message;
+           toast.className = `toast ${type} show`;
+         
+           setTimeout(() => {
+             toast.classList.remove("show");
+           }, 4000);
+         }
+         
+         function getRoleText(role) {
+           const roles = {
+             Admin: "Quản trị viên",
+             Approver: "Người duyệt",
+             User: "Người dùng",
+           };
+           return roles[role] || role;
+         }
+         
+         // Áp dụng phân quyền UI
+         function applyPermissions() {
+           // XÓA TẤT CẢ các role-note cũ để tránh lặp
+           const header = document.querySelector(".header h1");
+           if (header) {
+             const existingNotes = header.querySelectorAll(
+               'div.role-note, div[style*="fontSize"]'
+             );
+             existingNotes.forEach((note) => note.remove());
+           }
+           const role = userInfo.role;
+         
+           // User thường: chỉ xem được form đăng ký của mình
+           if (role === "User") {
+             // Ẩn phần thống kê
+             const statsContainer = document.querySelector(".stats-container");
+             if (statsContainer) {
+               statsContainer.style.display = "none";
+             }
+         
+             // Ẩn biểu đồ
+             const chartsContainer = document.querySelector(".charts-container");
+             if (chartsContainer) {
+               chartsContainer.style.display = "none";
+             }
+         
+             // Hiển thị thông báo quyền hạn
+             const header = document.querySelector(".header h1");
+             if (header) {
+               const roleNote = document.createElement("div");
+               roleNote.className = "role-note";
+               roleNote.style.fontSize = "14px";
+               roleNote.style.fontWeight = "normal";
+               roleNote.style.marginTop = "5px";
+               roleNote.style.opacity = "0.9";
+               roleNote.textContent =
+                 "(Bạn chỉ có thể xem và quản lý các đăng ký của mình)";
+               header.appendChild(roleNote);
+             }
+           }
+         
+           // Approver: xem được thống kê của địa điểm mình quản lý
+           else if (role === "Approver") {
+             const header = document.querySelector(".header h1");
+             if (header && userInfo.managedLocations) {
+               const roleNote = document.createElement("div");
+               roleNote.className = "role-note";
+               roleNote.style.fontSize = "14px";
+               roleNote.style.fontWeight = "normal";
+               roleNote.style.marginTop = "5px";
+               roleNote.style.opacity = "0.9";
+         
+               if (userInfo.managedLocations.includes("Tất cả")) {
+                 roleNote.textContent = "(Bạn có quyền duyệt tất cả các địa điểm)";
+               } else {
+                 roleNote.textContent = `(Bạn có quyền duyệt: ${userInfo.managedLocations.join(
+                   ", "
+                 )})`;
+               }
+               header.appendChild(roleNote);
+             }
+           }
+         
+           // Admin: full quyền
+           else if (role === "Admin") {
+             const header = document.querySelector(".header h1");
+             if (header) {
+               const roleNote = document.createElement("div");
+               roleNote.className = "role-note";
+               roleNote.style.fontSize = "14px";
+               roleNote.style.fontWeight = "normal";
+               roleNote.style.marginTop = "5px";
+               roleNote.style.opacity = "0.9";
+               roleNote.textContent = "(Bạn có toàn quyền quản trị hệ thống)";
+               header.appendChild(roleNote);
+             }
+           }
+         
+           // Cập nhật placeholder search dựa trên role
+           const searchInput = document.getElementById("searchInput");
+           if (searchInput) {
+             if (role === "User") {
+               searchInput.placeholder = "Tìm trong các đăng ký của bạn...";
+             } else if (role === "Approver") {
+               searchInput.placeholder =
+                 "Tìm trong các đăng ký thuộc địa điểm bạn quản lý...";
+             } else {
+               searchInput.placeholder = "Tìm theo tên, email, mã đăng ký...";
+             }
+           }
+         }
+         
+         function convertDateFormat(dateStr) {
+           if (!dateStr) return "";
+           // Convert dd/MM/yyyy to yyyy-MM-dd
+           const parts = dateStr.split("/");
+           if (parts.length === 3) {
+             return `${parts[2]}-${parts[1]}-${parts[0]}`;
+           }
+           return dateStr;
+         }
+         
+         
+      </script>
+      <!-- FOOTER CONTACT -->
+      <div class="container">
+         <div class="footer-contact">
+            <div class="footer-content">
+               <!-- About Section -->
+               <div class="footer-section">
+                  <h3>
+                     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                     </svg>
+                     Về hệ thống
+                  </h3>
+                  <p>
+                     Hệ thống quản lý công tác của THACO AGRI KLH SNUOL- Giải pháp tự động hóa quy trình đăng ký và phê duyệt công tác, 
+                     giúp tiết kiệm thời gian và tăng hiệu quả làm việc.
+                  </p>
+                  <div class="tech-stack">
+                     <span class="tech-badge">Google Apps Script</span>
+                     <span class="tech-badge">Google Sheets</span>
+                     <span class="tech-badge">Chart.js</span>
+                     <span class="tech-badge">HTML/CSS/JS</span>
+                  </div>
+               </div>
+               <!-- Contact Section -->
+               <div class="footer-section">
+                  <h3>
+                     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M21 10C21 17 12 23 12 23C12 23 3 17 3 10C3 7.61305 3.94821 5.32387 5.63604 3.63604C7.32387 1.94821 9.61305 1 12 1C14.3869 1 16.6761 1.94821 18.364 3.63604C20.0518 5.32387 21 7.61305 21 10Z" stroke="currentColor" stroke-width="2"/>
+                        <circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="2"/>
+                     </svg>
+                     Liên hệ
+                  </h3>
+                  <div class="contact-item">
+                     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3 8L10.89 13.26C11.2187 13.4793 11.6049 13.5963 12 13.5963C12.3951 13.5963 12.7813 13.4793 13.11 13.26L21 8M5 19H19C19.5304 19 20.0391 18.7893 20.4142 18.4142C20.7893 18.0391 21 17.5304 21 17V7C21 6.46957 20.7893 5.96086 20.4142 5.58579C20.0391 5.21071 19.5304 5 19 5H5C4.46957 5 3.96086 5.21071 3.58579 5.58579C3.21071 5.96086 3 6.46957 3 7V17C3 17.5304 3.21071 18.0391 3.58579 18.4142C3.96086 18.7893 4.46957 19 5 19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                     </svg>
+                     <a href="mailto:vovantrung@thagrico.vn">vovantrung@thagrico.vn</a>
+                  </div>
+                  <div class="contact-item">
+                     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3 5C3 3.89543 3.89543 3 5 3H8.27924C8.70967 3 9.09181 3.27543 9.22792 3.68377L10.7257 8.17721C10.8831 8.64932 10.6694 9.16531 10.2243 9.38787L7.96701 10.5165C9.06925 12.9612 11.0388 14.9308 13.4835 16.033L14.6121 13.7757C14.8347 13.3306 15.3507 13.1169 15.8228 13.2743L20.3162 14.7721C20.7246 14.9082 21 15.2903 21 15.7208V19C21 20.1046 20.1046 21 19 21H18C9.71573 21 3 14.2843 3 6V5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                     </svg>
+                     <span>+84 886519157</span>
+                  </div>
+                  <div class="contact-item">
+                     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M21 10C21 17 12 23 12 23C12 23 3 17 3 10C3 7.61305 3.94821 5.32387 5.63604 3.63604C7.32387 1.94821 9.61305 1 12 1C14.3869 1 16.6761 1.94821 18.364 3.63604C20.0518 5.32387 21 7.61305 21 10Z" stroke="currentColor" stroke-width="2"/>
+                        <circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="2"/>
+                     </svg>
+                     <span>Snuol, Kratie, Cambodia</span>
+                  </div>
+               </div>
+               <!-- Developer Section -->
+               <div class="footer-section">
+                  <h3>
+                     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M16 21V19C16 17.9391 15.5786 16.9217 14.8284 16.1716C14.0783 15.4214 13.0609 15 12 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="8.5" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
+                        <path d="M20 8V14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M23 11L20 14L17 11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                     </svg>
+                     Phát triển bởi
+                  </h3>
+                  <p style="font-size: 16px; font-weight: 600; color: var(--secondary-color); margin-bottom: 10px;">
+                     Võ Văn Trung
+                  </p>
+                  <p style="margin-bottom: 5px;">📍 Phòng Quản trị văn phòng - THACO AGRI KLH SNUOL </p>
+                  <p style="margin-bottom: 5px;">💼 Full-stack Developer</p>
+                  <p style="margin-bottom: 15px;">🎯 Google Apps Script Specialist</p>
+                  <!-- Social Links -->
+                  <div class="social-links">
+                     <a href="mailto:vovantrung@thagrico.vn" class="social-link" title="Email">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                           <path d="M4 4H20C21.1 4 22 4.9 22 6V18C22 19.1 21.1 20 20 20H4C2.9 20 2 19.1 2 18V6C2 4.9 2.9 4 4 4Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                           <path d="M22 6L12 13L2 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                     </a>
+                     <a href="https://github.com/VTV02" class="social-link" title="GitHub" target="_blank">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                           <path d="M12 2C6.477 2 2 6.477 2 12C2 16.418 4.865 20.166 8.839 21.489C9.339 21.579 9.521 21.269 9.521 21.001C9.521 20.763 9.513 20.109 9.508 19.299C6.726 19.899 6.139 17.822 6.139 17.822C5.685 16.661 5.029 16.352 5.029 16.352C4.121 15.734 5.098 15.747 5.098 15.747C6.101 15.818 6.629 16.776 6.629 16.776C7.521 18.313 8.97 17.871 9.539 17.611C9.631 16.965 9.889 16.523 10.175 16.269C7.955 16.012 5.62 15.153 5.62 11.197C5.62 10.097 6.01 9.199 6.649 8.497C6.546 8.239 6.203 7.233 6.747 5.856C6.747 5.856 7.586 5.583 9.497 6.915C10.295 6.688 11.15 6.575 12 6.571C12.85 6.575 13.705 6.688 14.504 6.915C16.414 5.583 17.252 5.856 17.252 5.856C17.797 7.233 17.453 8.239 17.351 8.497C17.991 9.199 18.379 10.097 18.379 11.197C18.379 15.163 16.041 16.009 13.813 16.263C14.172 16.574 14.492 17.186 14.492 18.124C14.492 19.484 14.48 20.581 14.48 21.001C14.48 21.271 14.659 21.584 15.168 21.488C19.138 20.162 22 16.417 22 12C22 6.477 17.523 2 12 2Z" fill="currentColor"/>
+                        </svg>
+                     </a>
+                     <a href="https://www.linkedin.com/in/vtv02/" class="social-link" title="LinkedIn" target="_blank">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                           <path d="M16 8C17.5913 8 19.1174 8.63214 20.2426 9.75736C21.3679 10.8826 22 12.4087 22 14V21H18V14C18 13.4696 17.7893 12.9609 17.4142 12.5858C17.0391 12.2107 16.5304 12 16 12C15.4696 12 14.9609 12.2107 14.5858 12.5858C14.2107 12.9609 14 13.4696 14 14V21H10V14C10 12.4087 10.6321 10.8826 11.7574 9.75736C12.8826 8.63214 14.4087 8 16 8Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                           <path d="M6 9H2V21H6V9Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                           <circle cx="4" cy="4" r="2" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                     </a>
+                     <a href="tel:+85568513239" class="social-link" title="Phone">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                           <path d="M22 16.92V19.92C22 20.4696 21.5523 20.9189 21.0027 20.9945C20.6523 21.0421 20.2994 21.0665 19.9447 21.0665C10.0502 21.0665 2.0332 13.0494 2.0332 3.15503C2.0332 2.80028 2.0576 2.44742 2.10518 2.09727C2.18084 1.54769 2.63018 1.1 3.17982 1.1H6.17982C6.67361 1.1 7.08395 1.47812 7.13474 1.96994C7.18486 2.45081 7.25868 2.92574 7.35564 3.39202C7.48451 4.01785 7.28538 4.66649 6.81858 5.12429L5.39157 6.51084C6.52515 9.25404 8.75696 11.4858 11.5 12.6194L12.8865 11.1924C13.3443 10.7256 13.9929 10.5265 14.6188 10.6553C15.0851 10.7523 15.56 10.8261 16.0409 10.8762C16.5327 10.927 16.9108 11.3374 16.9108 11.8312V14.8312C16.9108 15.3808 16.4631 15.8285 15.9135 15.9041C15.5631 15.9517 15.2102 15.976 14.8555 15.976C14.5008 15.976 14.1479 15.9517 13.7975 15.9041" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                     </a>
+                  </div>
+               </div>
+            </div>
+            <!-- Divider -->
+            <div class="footer-divider"></div>
+            <!-- Bottom -->
+            <div class="footer-bottom">
+               <p>
+                  © 2025 <strong>THACO AGRI KLH SNUOL</strong> - Hệ thống Quản lý Công tác. 
+                  All rights reserved.
+               </p>
+               <p style="margin-top: 8px;">
+                  Phát triển với ❤️ bởi <strong>Võ Văn Trung</strong> - Phòng Quản trị văn phòng
+               </p>
+               <p style="margin-top: 5px; font-size: 12px; opacity: 0.7;">
+                  Version 2.1.0 | Cập nhật: Tháng 11/2025
+               </p>
+            </div>
+         </div>
+      </div>
+   </body>
+</html>
